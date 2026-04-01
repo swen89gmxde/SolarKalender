@@ -6,57 +6,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body { font-family: Arial, sans-serif; background:#f5f6fa; padding:20px; }
+body {
+    font-family: Arial, sans-serif;
+    background:#f5f6fa;
+    padding:20px;
+}
 .container { max-width:900px; margin:auto; }
-.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 3px 8px rgba(0,0,0,0.12);}
-input, button { width:100%; padding:12px; margin-top:10px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
-button { background:#0067c4; color:white; border:none; cursor:pointer; }
+.card {
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.12);
+}
+input, button {
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+button {
+    background:#0067c4;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
 button:hover { background:#004f99; }
 
-.task { padding:15px; background:white; border-left:6px solid #0067c4; margin-bottom:12px; border-radius:6px; }
+.task {
+    padding:15px;
+    background:white;
+    border-left:6px solid #0067c4;
+    margin-bottom:12px;
+    border-radius:6px;
+}
 .done { background:#e4f7e4; border-left-color:#34a853; }
 
-.btn-small { padding:6px 12px; width:auto; background:#ccc; margin-right:5px; cursor:pointer; border-radius:6px; border:none; }
+.btn-small {
+    padding:6px 12px;
+    width:auto;
+    background:#ccc;
+    margin-right:5px;
+    cursor:pointer;
+    border-radius:6px;
+    border:none;
+}
 .btn-delete { background:#d9534f !important; color:white; }
 
-
-/* ✅ Neue, perfekte Sperrzeilen-Lösung */
+/* ✅ Perfekte Sperrzeilen – ohne Überlappung */
 .blocked-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
     background:#ffe6e6;
     border-radius:6px;
+    padding:10px 12px;
     margin-bottom:6px;
-    padding:10px;
     font-size:16px;
 }
 
-/* ✅ Kleiner X-Button rechts */
+/* ✅ X‑Button in eigener Spalte */
 .blocked-delete {
     background:#d9534f;
     color:white;
     border:none;
     border-radius:4px;
-    padding:4px 8px;
+    padding:4px 10px;
     font-size:14px;
     cursor:pointer;
 }
 
-
-/* Hinweisbox */
-.warn { 
-    padding:10px; 
-    background:#fff3cd; 
-    border-left:5px solid #ffcc00; 
-    margin-bottom:10px; 
-    border-radius:5px; 
-    font-weight:bold; 
+.warn {
+    padding:10px;
+    background:#fff3cd;
+    border-left:5px solid #ffcc00;
+    margin-bottom:10px;
+    border-radius:5px;
+    font-weight:bold;
 }
 </style>
 </head>
-
 <body>
+
 <div class="container">
 
 <h1>SolarKalender – PV‑Montageplaner</h1>
@@ -96,33 +129,37 @@ button:hover { background:#004f99; }
 </div>
 
 <script>
+// ---------------------------------------------------
 // Speicher
+// ---------------------------------------------------
 let tasks = JSON.parse(localStorage.getItem('pv_tasks') || '[]');
 let blocked = JSON.parse(localStorage.getItem('pv_blocked') || '[]');
 
-function saveAll(){
+function saveAll() {
     localStorage.setItem('pv_tasks', JSON.stringify(tasks));
     localStorage.setItem('pv_blocked', JSON.stringify(blocked));
 }
 
-function refreshPage(){ location.reload(); }
+function refreshPage() { location.reload(); }
 
 function warn(txt){
     document.getElementById("warnBox").innerHTML = `<div class='warn'>${txt}</div>`;
     setTimeout(()=>document.getElementById("warnBox").innerHTML="",4000);
 }
 
-// ✅ Datum TT/MM/JJ
+// ✅ Datum formatieren TT/MM/JJ
 function fmt(dateStr){
     let d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
     let dd = String(d.getDate()).padStart(2,"0");
     let mm = String(d.getMonth()+1).padStart(2,"0");
     let yy = String(d.getFullYear()).slice(2);
     return `${dd}/${mm}/${yy}`;
 }
 
-
+// ---------------------------------------------------
 // Datumshilfen
+// ---------------------------------------------------
 function addDays(date,days){
     let d=new Date(date);
     d.setDate(d.getDate()+days);
@@ -145,8 +182,8 @@ function isDayOccupied(day){
 
 function findNextFreeStart(start,dauer){
     while(true){
-        let days = getDaysRange(start,dauer);
-        if(!days.some(d=>inBlocked(d) || isDayOccupied(d)))
+        let range=getDaysRange(start,dauer);
+        if(!range.some(d=>inBlocked(d) || isDayOccupied(d)))
             return start;
         start = addDays(start,1);
     }
@@ -154,56 +191,59 @@ function findNextFreeStart(start,dauer){
 
 function autoShift(){
     tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    for(let t of tasks){
+    for(let t of tasks)
         t.start = findNextFreeStart(t.start,t.dauer);
-    }
 }
 
-
+// ---------------------------------------------------
 // Anlage
+// ---------------------------------------------------
 function addTask(){
-    let kunde = document.getElementById("kunde").value;
-    let start = document.getElementById("start").value;
-    let dauer = parseInt(document.getElementById("dauer").value);
+    let kunde=document.getElementById("kunde").value;
+    let start=document.getElementById("start").value;
+    let dauer=parseInt(document.getElementById("dauer").value);
 
     if(!kunde || !start || dauer<1){
-        warn("Bitte alles eingeben!");
+        warn("Bitte alle Felder eingeben!");
         return;
     }
 
-    let newStart = findNextFreeStart(start,dauer);
-    if(newStart !== start)
-        warn("Blockiert/belegt – verschoben auf " + fmt(newStart));
+    let newStart=findNextFreeStart(start,dauer);
+    if(newStart!==start)
+        warn("Blockiert/belegt – verschoben auf "+fmt(newStart));
 
     tasks.push({kunde,start:newStart,dauer,done:false});
     autoShift(); saveAll(); render();
 }
 
-
+// ---------------------------------------------------
 // Sperrzeit hinzufügen
+// ---------------------------------------------------
 function addBlock(){
     let from=document.getElementById("blockFrom").value;
     let to=document.getElementById("blockTo").value;
 
     if(!from || !to){ warn("Bitte beide Daten eingeben!"); return; }
-    if(new Date(to) < new Date(from)){ warn("Ungültiger Zeitraum!"); return; }
+    if(new Date(to)<new Date(from)){ warn("Ungültiger Zeitraum!"); return; }
 
     blocked.push({from,to});
     autoShift(); saveAll(); render();
 }
 
-
-// ✅ Sperrzeit löschen (neu & stabil)
+// ---------------------------------------------------
+// Sperrzeit löschen
+// ---------------------------------------------------
 function deleteBlocked(i){
     blocked.splice(i,1);
     autoShift(); saveAll(); render();
 }
 
-
+// ---------------------------------------------------
 // Render
+// ---------------------------------------------------
 function render(){
 
-    // ✅ Sperrzeiten
+    // ✅ Gesperrte Zeiträume
     let bl=document.getElementById("blockedList");
     bl.innerHTML="";
 
@@ -219,8 +259,7 @@ function render(){
         bl.appendChild(row);
     });
 
-
-    // ✅ Anlagen
+    // ✅ Anlagenliste
     let list=document.getElementById("taskList");
     list.innerHTML="";
     tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
