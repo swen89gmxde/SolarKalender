@@ -19,7 +19,7 @@ body {
     margin-bottom:20px;
     box-shadow:0 3px 8px rgba(0,0,0,0.12);
 }
-input, button {
+input, button, select {
     width:100%;
     padding:12px;
     margin-top:10px;
@@ -55,7 +55,6 @@ button:hover { background:#004f99; }
 }
 .btn-delete { background:#d9534f !important; color:white; }
 
-/* ✅ Perfekte Sperrzeilen – ohne Überlappung */
 .blocked-row {
     display:flex;
     justify-content:space-between;
@@ -67,7 +66,6 @@ button:hover { background:#004f99; }
     font-size:16px;
 }
 
-/* ✅ X‑Button in eigener Spalte */
 .blocked-delete {
     background:#d9534f;
     color:white;
@@ -129,9 +127,7 @@ button:hover { background:#004f99; }
 </div>
 
 <script>
-// ---------------------------------------------------
 // Speicher
-// ---------------------------------------------------
 let tasks = JSON.parse(localStorage.getItem('pv_tasks') || '[]');
 let blocked = JSON.parse(localStorage.getItem('pv_blocked') || '[]');
 
@@ -147,7 +143,7 @@ function warn(txt){
     setTimeout(()=>document.getElementById("warnBox").innerHTML="",4000);
 }
 
-// ✅ Datum formatieren TT/MM/JJ
+// ✅ Datum TT/MM/JJ
 function fmt(dateStr){
     let d = new Date(dateStr);
     if (isNaN(d)) return dateStr;
@@ -157,29 +153,23 @@ function fmt(dateStr){
     return `${dd}/${mm}/${yy}`;
 }
 
-// ---------------------------------------------------
 // Datumshilfen
-// ---------------------------------------------------
 function addDays(date,days){
     let d=new Date(date);
     d.setDate(d.getDate()+days);
     return d.toISOString().split("T")[0];
 }
-
 function getDaysRange(start,dauer){
     let out=[];
     for(let i=0;i<dauer;i++) out.push(addDays(start,i));
     return out;
 }
-
 function inBlocked(day){
     return blocked.some(r => day >= r.from && day <= r.to);
 }
-
 function isDayOccupied(day){
     return tasks.some(t => getDaysRange(t.start,t.dauer).includes(day));
 }
-
 function findNextFreeStart(start,dauer){
     while(true){
         let range=getDaysRange(start,dauer);
@@ -188,16 +178,13 @@ function findNextFreeStart(start,dauer){
         start = addDays(start,1);
     }
 }
-
 function autoShift(){
     tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
     for(let t of tasks)
         t.start = findNextFreeStart(t.start,t.dauer);
 }
 
-// ---------------------------------------------------
-// Anlage
-// ---------------------------------------------------
+// Neue Anlage
 function addTask(){
     let kunde=document.getElementById("kunde").value;
     let start=document.getElementById("start").value;
@@ -209,16 +196,18 @@ function addTask(){
     }
 
     let newStart=findNextFreeStart(start,dauer);
-    if(newStart!==start)
-        warn("Blockiert/belegt – verschoben auf "+fmt(newStart));
 
-    tasks.push({kunde,start:newStart,dauer,done:false});
+    tasks.push({
+        kunde,
+        start:newStart,
+        dauer,
+        status:"Offen"  // ✅ neuer Standardstatus
+    });
+
     autoShift(); saveAll(); render();
 }
 
-// ---------------------------------------------------
 // Sperrzeit hinzufügen
-// ---------------------------------------------------
 function addBlock(){
     let from=document.getElementById("blockFrom").value;
     let to=document.getElementById("blockTo").value;
@@ -230,17 +219,13 @@ function addBlock(){
     autoShift(); saveAll(); render();
 }
 
-// ---------------------------------------------------
 // Sperrzeit löschen
-// ---------------------------------------------------
 function deleteBlocked(i){
     blocked.splice(i,1);
     autoShift(); saveAll(); render();
 }
 
-// ---------------------------------------------------
 // Render
-// ---------------------------------------------------
 function render(){
 
     // ✅ Gesperrte Zeiträume
@@ -268,7 +253,7 @@ function render(){
         let end = addDays(t.start, t.dauer-1);
 
         let div=document.createElement("div");
-        div.className="task"+(t.done?" done":"");
+        div.className="task";
 
         div.innerHTML = `
             <strong>${t.kunde}</strong><br>
@@ -277,11 +262,17 @@ function render(){
             Dauer: ${t.dauer} Tage<br><br>
         `;
 
-        let doneBtn=document.createElement("button");
-        doneBtn.className="btn-small";
-        doneBtn.innerText=t.done?"Erledigt zurück":"Als erledigt markieren";
-        doneBtn.onclick=()=>{
-            t.done=!t.done;
+        // ✅ Neues Status-Dropdown
+        let select=document.createElement("select");
+        select.innerHTML=`
+            <option ${t.status==="Offen"?"selected":""}>Offen</option>
+            <option ${t.status==="DC begonnen"?"selected":""}>DC begonnen</option>
+            <option ${t.status==="DC abgeschlossen"?"selected":""}>DC abgeschlossen</option>
+            <option ${t.status==="Erledigt"?"selected":""}>Erledigt</option>
+        `;
+
+        select.onchange=()=>{
+            t.status = select.value;
             autoShift(); saveAll(); render();
         };
 
@@ -293,7 +284,7 @@ function render(){
             autoShift(); saveAll(); render();
         };
 
-        div.appendChild(doneBtn);
+        div.appendChild(select);
         div.appendChild(delBtn);
 
         list.appendChild(div);
