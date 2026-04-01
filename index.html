@@ -19,15 +19,20 @@ button:hover { background:#004f99; }
 .btn-small { padding:6px 12px; width:auto; background:#ccc; margin-right:5px; cursor:pointer; border-radius:6px; border:none; }
 .btn-delete { background:#d9534f !important; color:white; }
 
+/* ✅ FINAL FIX: Blockierte Tage */
 .blocked-day { 
-    padding:8px 40px 8px 8px; 
+    padding: 8px 50px 8px 8px;      /* rechts Platz für X */
     background:#ffe6e6; 
     border-radius:6px; 
     margin-bottom:5px; 
     position:relative;
-    min-height:26px;
+    min-height:28px;
+    display:flex;
+    align-items:center;
+    font-size:16px;
 }
 
+/* ✅ FINAL FIX: X-Button rechts, klein, überlappt nichts */
 .delete-x {
     position:absolute;
     right:8px;
@@ -37,9 +42,9 @@ button:hover { background:#004f99; }
     color:white;
     border:none;
     border-radius:4px;
-    padding:0 5px;
+    padding:0 6px;
     font-size:12px;
-    height:18px;
+    height:20px;
     line-height:18px;
     cursor:pointer;
     z-index:10;
@@ -54,7 +59,6 @@ button:hover { background:#004f99; }
     font-weight:bold; 
 }
 </style>
-
 </head>
 
 <body>
@@ -63,13 +67,13 @@ button:hover { background:#004f99; }
 <h1>SolarKalender – PV‑Montageplaner</h1>
 <div id="warnBox"></div>
 
-<!-- Refresh Button -->
+<!-- ✅ Refresh Button -->
 <button onclick="refreshPage()" 
         style="background:#888; color:white; border-radius:8px; margin-bottom:20px; padding:10px;">
     🔄 Seite aktualisieren
 </button>
 
-<!-- Neue Anlage -->
+<!-- ✅ Neue Anlage -->
 <div class="card">
 <h2>Neue Anlage einplanen</h2>
 <label>Kunde</label><input id="kunde">
@@ -78,7 +82,7 @@ button:hover { background:#004f99; }
 <button onclick="addTask()">Anlage hinzufügen</button>
 </div>
 
-<!-- Sperrzeiten -->
+<!-- ✅ Sperrzeiten -->
 <div class="card">
 <h2>Gesperrte Tage (von‑bis)</h2>
 <label>Von</label><input id="blockFrom" type="date">
@@ -89,7 +93,7 @@ button:hover { background:#004f99; }
 <div id="blockedList"></div>
 </div>
 
-<!-- Anlagenliste -->
+<!-- ✅ Anlagenliste -->
 <div class="card">
 <h2>Geplante Anlagen</h2>
 <div id="taskList"></div>
@@ -99,7 +103,9 @@ button:hover { background:#004f99; }
 
 
 <script>
-// Speicher
+// -------------------------------------------------------------
+// Lokaler Speicher
+// -------------------------------------------------------------
 let tasks = JSON.parse(localStorage.getItem('pv_tasks') || '[]');
 let blocked = JSON.parse(localStorage.getItem('pv_blocked') || '[]');
 
@@ -119,7 +125,9 @@ function warn(txt) {
 }
 
 
+// -------------------------------------------------------------
 // Datumshilfen
+// -------------------------------------------------------------
 function addDays(date, days) {
     let d = new Date(date);
     d.setDate(d.getDate() + days);
@@ -169,7 +177,9 @@ function autoShift() {
 }
 
 
-// Anlagen
+// -------------------------------------------------------------
+// Anlage hinzufügen
+// -------------------------------------------------------------
 function addTask() {
     let kunde = document.getElementById("kunde").value;
     let start = document.getElementById("start").value;
@@ -190,7 +200,9 @@ function addTask() {
 }
 
 
-// Sperrzeiten
+// -------------------------------------------------------------
+// Sperrzeit hinzufügen
+// -------------------------------------------------------------
 function addBlock() {
     let from = document.getElementById("blockFrom").value;
     let to   = document.getElementById("blockTo").value;
@@ -203,7 +215,9 @@ function addBlock() {
 }
 
 
-// ✅ Sperrzeit löschen (funktioniert jetzt 100% sicher)
+// -------------------------------------------------------------
+// Sperrzeit löschen ✅
+// -------------------------------------------------------------
 function deleteBlocked(i) {
     blocked.splice(i, 1);
     autoShift();
@@ -212,10 +226,12 @@ function deleteBlocked(i) {
 }
 
 
+// -------------------------------------------------------------
 // Renderfunktion
+// -------------------------------------------------------------
 function render() {
 
-    // Sperrzeiten
+    // ✅ Sperrzeiten darstellen
     let bl = document.getElementById("blockedList");
     bl.innerHTML = "";
 
@@ -231,7 +247,7 @@ function render() {
         bl.appendChild(div);
     });
 
-    // Anlagen
+    // ✅ Anlagenliste
     let list=document.getElementById("taskList");
     list.innerHTML="";
     tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
@@ -261,8 +277,7 @@ function render() {
         del.className="btn-small btn-delete";
         del.innerText="Löschen";
         del.onclick=()=>{
-            tasks.splice(i,1);
-            autoShift(); saveAll(); render();
+            tasks.splice(i,1); autoShift(); saveAll(); render();
         };
 
         div.appendChild(done);
