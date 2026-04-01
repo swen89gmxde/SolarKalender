@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>SolarKalender – PV‑Montageplaner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body { font-family: Arial, sans-serif; background:#f5f6fa; padding:20px; }
+.container { max-width:900px; margin:auto; }
+.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 3px 8px rgba(0,0,0,0.12);}
+input, button { width:100%; padding:12px; margin-top:10px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+button { background:#0067c4; color:white; border:none; cursor:pointer; }
+button:hover { background:#004f99; }
+.task { padding:15px; background:white; border-left:6px solid #0067c4; margin-bottom:12px; border-radius:6px; }
+.done { background:#e4f7e4; border-left-color:#34a853; }
+.btn-small { padding:6px 12px; width:auto; background:#ccc; margin-right:5px; cursor:pointer; border-radius:6px; border:none; }
+.btn-delete { background:#d9534f !important; color:white; }
+.blocked-day { padding:8px; background:#ffe6e6; border-radius:6px; margin-bottom:5px; }
+.warn { padding:10px; background:#fff3cd; border-left:5px solid #ffcc00; margin-bottom:10px; border-radius:5px; font-weight:bold; }
+</style>
+
+</head>
+<body>
+<div class="container">
+
+<h1>SolarKalender – PV‑Montageplaner</h1>
+<div id="warnBox"></div>
+
+<div class="card">
+<h2>Neue Anlage einplanen</h2>
+<label>Kunde</label><input id="kunde">
+<label>Startdatum</label><input id="start" type="date">
+<label>Montagedauer (Tage)</label><input id="dauer" type="number" min="1" value="1">
+<button onclick="addTask()">Anlage hinzufügen</button>
+</div>
+
+<div class="card">
+<h2>Gesperrte Tage (von‑bis)</h2>
+<label>Von</label><input id="blockFrom" type="date">
+<label>Bis</label><input id="blockTo" type="date">
+<button onclick="addBlock()">Zeitraum sperren</button>
+<h3>Gesperrte Zeiträume</h3>
+<div id="blockedList"></div>
+</div>
+
+<div class="card">
+<h2>Geplante Anlagen</h2>
+<div id="taskList"></div>
+</div>
+
+</div>
+
+<script>
+// -----------------------------------------------
+let tasks = JSON.parse(localStorage.getItem('pv_tasks') || '[]');
+let blocked = JSON.parse(localStorage.getItem('pv_blocked') || '[]');
+
+function saveAll() {
+    localStorage.setItem('pv_tasks', JSON.stringify(tasks));
+    localStorage.setItem('pv_blocked', JSON.stringify(blocked));
+}
+
+function warn(txt) {
+    document.getElementById("warnBox").innerHTML = `<div class='warn'>${txt}</div>`;
+    setTimeout(()=>document.getElementById("warnBox").innerHTML="",6000);
+}
+
+// -----------------------------------------------
+function addDays(date, days) {
+    let d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split("T")[0];
+}
+
+function getDaysRange(start, dauer) {
+    let arr = [];
+    for (let i=0;i<dauer;i++) arr.push(addDays(start, i));
+    return arr;
+}
+
+function inBlocked(day) {
+    let d = new Date(day);
+    d.setHours(0,0,0,0);
+
+    for (let r of blocked) {
+        let f = new Date(r.from); f.setHours(0,0,0,0);
+        let t = new Date(r.to);   t.setHours(0,0,0,0);
+        if (d >= f && d <= t) return true;
+    }
+    return false;
+}
+
+function isDayOccupied(day) {
+    for (let t of tasks) {
+        let range = getDaysRange(t.start, t.dauer);
+        if (range.includes(day)) return true;
+    }
+    return false;
+}
+
+function findNextFreeStart(start, dauer) {
+    while (true) {
+        let range = getDaysRange(start, dauer);
+        let conflict =
+            range.some(d => inBlocked(d)) ||
+            range.some(d => isDayOccupied(d));
+
+        if (!conflict) return start;
+        start = addDays(start, 1);
+    }
+}
+
+function autoShift() {
+    tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
+    for (let t of tasks) {
+        t.start = findNextFreeStart(t.start, t.dauer);
+    }
+}
+
+// -----------------------------------------------
+function addTask() {
+    let kunde = document.getElementById("kunde").value;
+    let start = document.getElementById("start").value;
+    let dauer = parseInt(document.getElementById("dauer").value);
+
+    if (!kunde || !start || dauer < 1) {
+        warn("Bitte Kunde, Datum und Dauer eingeben!");
+        return;
+    }
+
+    let newStart = findNextFreeStart(start, dauer);
+    if (newStart !== start)
+        warn("Datum war blockiert oder belegt — verschoben auf " + newStart);
+
+    tasks.push({ kunde, start:newStart, dauer, done:false });
+
+    autoShift();
+    saveAll();
+    render();
+}
+
+// -----------------------------------------------
+function addBlock() {
+    let from = document.getElementById("blockFrom").value;
+    let to   = document.getElementById("blockTo").value;
+
+    if (!from || !to) { warn("Beide Daten eingeben!"); return; }
+    if (new Date(to) < new Date(from)) { warn("Bis < Von geht nicht!"); return; }
+
+    let hit = false;
+    for (let t of tasks) {
+        if (getDaysRange(t.start, t.dauer).some(d => d >= from && d <= to))
+            hit = true;
+    }
+
+    if (hit) warn("Achtung: Anlagen liegen im gesperrten Zeitraum — werden verschoben.");
+
+    blocked.push({from,to});
+    autoShift();
+    saveAll();
+    render();
+}
+
+// -----------------------------------------------
+function render() {
+    let b = document.getElementById("blockedList");
+    b.innerHTML = "";
+    blocked.forEach(r=>{
+        let el = document.createElement("div");
+        el.className="blocked-day";
+        el.innerText=r.from+" bis "+r.to;
+        b.appendChild(el);
+    });
+
+    let list = document.getElementById("taskList");
+    list.innerHTML="";
+    tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
+
+    tasks.forEach((t,i)=>{
+        let end = addDays(t.start, t.dauer - 1);
+
+        let div = document.createElement("div");
+        div.className="task"+(t.done?" done":"" );
+        div.innerHTML =
+        `<strong>${t.kunde}</strong><br>
+         Start: ${t.start}<br>
+         Ende: ${end}<br>
+         Dauer: ${t.dauer} Tage<br><br>`;
+
+        let b1 = document.createElement("button");
+        b1.className="btn-small";
+        b1.innerText = t.done ? "Erledigt zurück" : "Als erledigt markieren";
+        b1.onclick = ()=>{
+            t.done=!t.done; autoShift(); saveAll(); render();
+        };
+
+        let b2 = document.createElement("button");
+        b2.className="btn-small btn-delete";
+        b2.innerText="Löschen";
+        b2.onclick = ()=>{
+            tasks.splice(i,1); autoShift(); saveAll(); render();
+        };
+
+        div.appendChild(b1);
+        div.appendChild(b2);
+        list.appendChild(div);
+    });
+}
+render();
+</script>
+
+</body>
+</html>
