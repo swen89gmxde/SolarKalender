@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- ✅ Firebase COMPAT SDKs -->
-<script src="https://www.gstatic.com/firebaseebase-app-compat.js
-<script src="https://www.gstatic.com/firebasejs/10-firestore-compat.js
+https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebasempat.js
 
 <style>
 body {
@@ -284,9 +284,7 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 🔄 Seite aktualisieren
 </button>
 
-<!-- ====================================
-     ANLAGE ANLEGEN (Wizard)
-==================================== -->
+<!-- ✅ Neue Anlage -->
 <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
 <h2>Neue Anlage einplanen</h2>
 
@@ -299,9 +297,7 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 
 </div>
 
-<!-- ====================================
-     SPERRZEITEN + GRUND
-==================================== -->
+<!-- ✅ Sperrzeiten -->
 <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
 <h2>Gesperrte Tage (von‑bis)</h2>
 
@@ -317,9 +313,7 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <div id="blockedList"></div>
 </div>
 
-<!-- ====================================
-     MONATSKALENDER
-==================================== -->
+<!-- ✅ Kalender -->
 <div class="calendar-container">
 <div class="calendar-header">
     <button onclick="prevMonth()">◀</button>
@@ -330,15 +324,12 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
-<!-- ====================================
-     TAGESDETAILS
-==================================== -->
+<!-- ✅ Tagesdetails -->
 <div class="day-details">
 <h2 id="selectedDayTitle">Details zum Tag</h2>
 <div id="dayTasks"></div>
 </div>
-
-<script>
+    <script>
 /* ============================================================
    ✅ FIREBASE INITIALISIEREN
    ============================================================ */
@@ -368,50 +359,41 @@ let selectedDay = null;
    ✅ HELFER (Formatierung & Datum)
    ============================================================ */
 function fmt(d){
-    let x=new Date(d);
-    return String(x.getDate()).padStart(2,"0")+"/"+
-           String(x.getMonth()+1).padStart(2,"0")+"/"+
+    let x = new Date(d);
+    return String(x.getDate()).padStart(2,"0") + "/" +
+           String(x.getMonth()+1).padStart(2,"0") + "/" +
            String(x.getFullYear()).slice(2);
 }
 
-function addDays(d,n){
-    let x=new Date(d);
-    x.setDate(x.getDate()+n);
-    return x.toISOString().split("T")[0];
-}
-
 function getRange(start,end){
-    let out=[];
-    let s=new Date(start), e=new Date(end);
-    while(s<=e){
+    let out = [];
+    let s = new Date(start), e = new Date(end);
+    while(s <= e){
         out.push(s.toISOString().split("T")[0]);
         s.setDate(s.getDate()+1);
     }
     return out;
 }
 
-/* ============================================================
-   ✅ ISO-KW BERECHNUNG
-   ============================================================ */
 function getISOWeek(date){
-    const t=new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const t = new Date(date);
     const day = (t.getDay()+6)%7;
     t.setDate(t.getDate() - day + 3);
-    const w1=new Date(t.getFullYear(),0,4);
-    return 1 + Math.round(((t-w1)/86400000 - 3 + ((w1.getDay()+6)%7))/7);
+    const w1 = new Date(t.getFullYear(),0,4);
+    return 1 + Math.round(((t - w1) / 86400000 - 3 + ((w1.getDay()+6)%7)) / 7);
 }
 
 /* ============================================================
-   ✅ LIVE-SYNC VON FIRESTORE
+   ✅ LIVE-SYNC
    ============================================================ */
 tasksRef.onSnapshot(snap=>{
-    tasks = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    tasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderCalendar();
     renderDayDetails(selectedDay);
 });
 
 blockedRef.onSnapshot(snap=>{
-    blocked = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    blocked = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderCalendar();
     renderDayDetails(selectedDay);
 });
@@ -419,31 +401,27 @@ blockedRef.onSnapshot(snap=>{
 /* ============================================================
    ✅ WARNBOX
    ============================================================ */
-function warn(m){
+function warn(msg){
     document.getElementById("warnBox").innerHTML =
-        `<div class='warn'>${m}</div>`;
-    setTimeout(()=> document.getElementById("warnBox").innerHTML="", 4000);
+        `<div class="warn">${msg}</div>`;
+    setTimeout(()=> document.getElementById("warnBox").innerHTML="", 3000);
 }
 
 /* ============================================================
-   ✅ LABELS FÜR KALENDERTAG (Kunde / Grund)
+   ✅ LABELS UNTER KALENDERTAGEN (Kunde + Grund)
    ============================================================ */
 function getLabelsForDay(dateKey){
-    let out=[];
+    let out = [];
 
-    // Sperrzeiten
     blocked.forEach(b=>{
         if(getRange(b.from,b.to).includes(dateKey)){
             out.push({
-                text: (b.grund && b.grund.trim()!=="") 
-                        ? b.grund.substring(0,12)+"…" 
-                        : "Gesperrt",
-                type:"block"
+                text: b.grund ? b.grund.substring(0,12)+"…" : "Gesperrt",
+                type: "block"
             });
         }
     });
 
-    // Anlagen
     tasks.forEach(t=>{
         if(getRange(t.start,t.end).includes(dateKey)){
             out.push({
@@ -457,10 +435,10 @@ function getLabelsForDay(dateKey){
 }
 
 /* ============================================================
-   ✅ BALKEN (Farben im Kalender)
+   ✅ FARB-BALKEN (Status / Sperre)
    ============================================================ */
 function getBarsForDay(dateKey){
-    let bars=[];
+    let bars = [];
 
     blocked.forEach(b=>{
         if(getRange(b.from,b.to).includes(dateKey)){
@@ -485,8 +463,8 @@ function getBarsForDay(dateKey){
    ============================================================ */
 function renderCalendar(){
 
-    const names=["Januar","Februar","März","April","Mai","Juni",
-                 "Juli","August","September","Oktober","November","Dezember"];
+    const names=["Januar","Februar","März","April","Mai",
+                 "Juni","Juli","August","September","Oktober","November","Dezember"];
 
     document.getElementById("monthLabel").innerText =
         names[currentMonth] + " " + currentYear;
@@ -494,7 +472,6 @@ function renderCalendar(){
     const grid = document.getElementById("calendarGrid");
     grid.innerHTML = "";
 
-    /* Header mit KW + Wochentagen */
     grid.innerHTML += `<div class="weekday-header">KW</div>`;
     ["Mo","Di","Mi","Do","Fr","Sa","So"].forEach(w=>{
         grid.innerHTML += `<div class="weekday-header">${w}</div>`;
@@ -502,41 +479,36 @@ function renderCalendar(){
 
     let firstDay = new Date(currentYear, currentMonth, 1);
     let offset = (firstDay.getDay()+6)%7;
-
     let cur = new Date(currentYear, currentMonth, 1 - offset);
 
     for(let week=0; week<6; week++){
-
         grid.innerHTML += `<div class="kw-cell">${getISOWeek(cur)}</div>`;
 
         for(let d=0; d<7; d++){
 
             let dateKey = cur.toISOString().split("T")[0];
-
             let html = `<div class="calendar-day-number">${cur.getDate()}</div>`;
 
-            // Balken
             getBarsForDay(dateKey).forEach(b=>{
                 html += `<div class="day-bar ${b}"></div>`;
             });
 
-            // Kunde + Grund
             getLabelsForDay(dateKey).forEach(l=>{
-                let color="#444";
-                if(l.type==="block") color="#d9534f";
-                if(l.type==="Offen") color="#fabb00";
-                if(l.type==="DC begonnen") color="#ff8a00";
-                if(l.type==="DC abgeschlossen") color="#0067c4";
-                if(l.type==="Erledigt") color="#3da35c";
+                let col="#444";
+                if(l.type==="block") col="#d9534f";
+                if(l.type==="Offen") col="#fabb00";
+                if(l.type==="DC begonnen") col="#ff8a00";
+                if(l.type==="DC abgeschlossen") col="#0067c4";
+                if(l.type==="Erledigt") col="#3da35c";
 
-                html += `<div style="font-size:11px;color:${color};overflow:hidden;">${l.text}</div>`;
+                html += `<div style="font-size:11px; color:${col}; overflow:hidden;">${l.text}</div>`;
             });
 
             grid.innerHTML += `
                 <div class="calendar-day"
                      onclick="selectedDay='${dateKey}'; renderDayDetails('${dateKey}'); scrollToDayDetails();"
                      style="background:${cur.getMonth()===currentMonth?'#fff':'#f0f0f0'};">
-                    ${html}
+                     ${html}
                 </div>
             `;
 
@@ -556,7 +528,6 @@ function renderDayDetails(date){
 
     let html="";
 
-    // Sperren
     blocked.forEach(b=>{
         if(getRange(b.from,b.to).includes(date)){
             html += `
@@ -565,12 +536,13 @@ function renderDayDetails(date){
                 ${fmt(b.from)} – ${fmt(b.to)}<br>
                 ${b.grund ? `<em>${b.grund}</em>` : ""}
                 <br>
-                <button class="btn-small btn-delete" onclick="deleteBlocked('${b.id}')">Löschen</button>
+                <button class="btn-small btn-delete" onclick="deleteBlocked('${b.id}')">
+                    Löschen
+                </button>
             </div>`;
         }
     });
 
-    // Anlagen
     tasks.forEach(t=>{
         if(getRange(t.start,t.end).includes(date)){
             html += `
@@ -588,7 +560,7 @@ function renderDayDetails(date){
         }
     });
 
-    if(html==="") html="<p>Keine Einträge.</p>";
+    if(html==="") html = "<p>Keine Einträge.</p>";
 
     document.getElementById("dayTasks").innerHTML = html;
 
@@ -603,7 +575,6 @@ function prevMonth(){
     if(currentMonth<0){ currentMonth=11; currentYear--; }
     renderCalendar();
 }
-
 function nextMonth(){
     currentMonth++;
     if(currentMonth>11){ currentMonth=0; currentYear++; }
@@ -638,60 +609,56 @@ function deleteBlocked(id){
 }
 
 /* ============================================================
-   ✅ START DER APP
+   ✅ START
    ============================================================ */
-(function start(){
-    let now=new Date();
-    currentYear=now.getFullYear();
-    currentMonth=now.getMonth();
+(function(){
+    let now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
     selectedDay = now.toISOString().split("T")[0];
 
     renderCalendar();
     renderDayDetails(selectedDay);
 })();
 </script>
-``
 <!-- ✅ WIZARD C – Bottom Sheet für neue Anlagen -->
-<div id="wizardBg">
-    <div id="wizardSheet">
-
-        <div style="width:60px;height:6px;background:#ccc;border-radius:3px;margin:0 auto 15px auto;"></div>
+<div id="wizardBg" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.45); backdrop-filter:blur(3px); z-index:9999; justify-content:flex-end;">
+    <div id="wizardSheet" style="background:white; width:100%; max-height:80%; border-radius:16px 16px 0 0; padding:20px; display:flex; flex-direction:column; transform:translateY(100%); transition:0.3s;">
+        
+        <div style="width:60px; height:6px; background:#ccc; border-radius:3px; margin:0 auto 15px auto;"></div>
 
         <h2 id="wizardTitle"></h2>
         <div id="wizardContent"></div>
 
-        <button id="wizardNextBtn"
-                style="padding:12px;margin-top:20px;background:#0067c4;color:white;border:none;border-radius:8px;">
+        <button id="wizardNextBtn" style="padding:12px; background:#0067c4; color:white; border:none; border-radius:8px; margin-top:20px;">
             Weiter
         </button>
-
-        <button id="wizardCancelBtn"
-                style="padding:10px;margin-top:10px;background:#999;color:white;border:none;border-radius:8px;">
+        <button id="wizardCancelBtn" style="padding:10px; background:#999; color:white; border:none; border-radius:8px; margin-top:10px;">
             Abbrechen
         </button>
-
     </div>
 </div>
 
+
 <script>
 /* ============================================================
-   ✅ WIZARD C – BOTTOM SHEET
+   ✅ WIZARD C – STEP-BY-STEP
    ============================================================ */
-let wizardStep=1;
-let wizardData={};
+let wizardStep = 1;
+let wizardData = {};
 
 function openWizard(){
-    wizardStep=1;
-    wizardData={};
+    wizardStep = 1;
+    wizardData = {};
 
-    document.getElementById("wizardBg").style.display="flex";
-    setTimeout(()=> document.getElementById("wizardSheet").style.transform="translateY(0%)", 10);
+    document.getElementById("wizardBg").style.display = "flex";
+    setTimeout(()=> document.getElementById("wizardSheet").style.transform = "translateY(0%)", 10 );
     renderWizardStep();
 }
 
 function closeWizard(){
-    document.getElementById("wizardSheet").style.transform="translateY(100%)";
-    setTimeout(()=> document.getElementById("wizardBg").style.display="none", 250);
+    document.getElementById("wizardSheet").style.transform = "translateY(100%)";
+    setTimeout(()=> document.getElementById("wizardBg").style.display = "none", 250 );
 }
 
 document.getElementById("wizardCancelBtn").onclick = closeWizard;
@@ -699,86 +666,84 @@ document.getElementById("wizardCancelBtn").onclick = closeWizard;
 document.getElementById("wizardNextBtn").onclick = ()=>{
     if(!processWizardStep()) return;
     wizardStep++;
-    if(wizardStep>4){
+    if(wizardStep > 4){
         saveWizardTask();
         return;
     }
     renderWizardStep();
 };
 
-/* ------------------------------------------------------------ */
 function renderWizardStep(){
-    const title=document.getElementById("wizardTitle");
-    const content=document.getElementById("wizardContent");
-    const next=document.getElementById("wizardNextBtn");
+    const title = document.getElementById("wizardTitle");
+    const content = document.getElementById("wizardContent");
+    const next = document.getElementById("wizardNextBtn");
 
     if(wizardStep===1){
-        title.innerText="Startdatum wählen";
-        content.innerHTML=`<input id="wizStart" type="date" 
-                          style="width:100%;padding:12px;border-radius:8px;border:1px solid #ccc;">`;
-        next.innerText="Weiter";
+        title.innerText = "Startdatum wählen";
+        content.innerHTML = `<input id="wizStart" type="date" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px;">`;
+        next.innerText = "Weiter";
     }
     if(wizardStep===2){
-        title.innerText="Enddatum wählen";
-        content.innerHTML=`<input id="wizEnd" type="date" 
-                          style="width:100%;padding:12px;border-radius:8px;border:1px solid #ccc;">`;
-        next.innerText="Weiter";
+        title.innerText = "Enddatum wählen";
+        content.innerHTML = `<input id="wizEnd" type="date" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px;">`;
+        next.innerText = "Weiter";
     }
     if(wizardStep===3){
-        title.innerText="Kunde eingeben";
-        content.innerHTML=`<input id="wizKunde" type="text" placeholder="Kunde"
-                          style="width:100%;padding:12px;border-radius:8px;border:1px solid #ccc;">`;
-        next.innerText="Weiter";
+        title.innerText = "Kunde eingeben";
+        content.innerHTML = `<input id="wizKunde" type="text" placeholder="Kunde" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px;">`;
+        next.innerText = "Weiter";
     }
     if(wizardStep===4){
-        title.innerText="Zusammenfassung";
-        content.innerHTML=`
+        title.innerText = "Zusammenfassung";
+        content.innerHTML = `
             <p><strong>Start:</strong> ${fmt(wizardData.start)}</p>
             <p><strong>Ende:</strong> ${fmt(wizardData.end)}</p>
-            <p><strong>Kunde:</strong> ${wizardData.kunde}</p>`;
-        next.innerText="Fertig";
+            <p><strong>Kunde:</strong> ${wizardData.kunde}</p>
+        `;
+        next.innerText = "Fertig";
     }
 }
 
-/* ------------------------------------------------------------ */
 function processWizardStep(){
     if(wizardStep===1){
-        let v=document.getElementById("wizStart").value;
-        if(!v) return warn("Startdatum fehlt!"), false;
-        wizardData.start=v;
+        let v = document.getElementById("wizStart").value;
+        if(!v){ warn("Startdatum fehlt!"); return false; }
+        wizardData.start = v;
     }
+
     if(wizardStep===2){
-        let v=document.getElementById("wizEnd").value;
-        if(!v) return warn("Enddatum fehlt!"), false;
-        if(new Date(v)<new Date(wizardData.start))
-            return warn("Enddatum muss nach Startdatum liegen!"), false;
-        wizardData.end=v;
+        let v = document.getElementById("wizEnd").value;
+        if(!v){ warn("Enddatum fehlt!"); return false; }
+        if(new Date(v) < new Date(wizardData.start)){
+            warn("Enddatum muss nach Startdatum liegen!");
+            return false;
+        }
+        wizardData.end = v;
     }
+
     if(wizardStep===3){
-        let v=document.getElementById("wizKunde").value.trim();
-        if(!v) return warn("Kunde fehlt!"), false;
-        wizardData.kunde=v;
+        let v = document.getElementById("wizKunde").value.trim();
+        if(!v){ warn("Kunde fehlt!"); return false; }
+        wizardData.kunde = v;
     }
+
     return true;
 }
 
-/* ------------------------------------------------------------ */
 function saveWizardTask(){
     let range = getRange(wizardData.start, wizardData.end);
 
-    // Sperre prüfen
-    if(range.some(d=>blocked.some(b=>d>=b.from && d<=b.to)))
-        return warn("Zeitraum liegt in Sperrzeit!");
+    if(range.some(d=> blocked.some(b=> d>=b.from && d<=b.to )))
+        return warn("Zeitraum liegt in Sperre!");
 
-    // Überschneidung prüfen
-    if(tasks.some(t=> getRange(t.start,t.end).some(x=>range.includes(x))))
-        return warn("Zeitraum überschneidet sich!");
+    if(tasks.some(t=> getRange(t.start,t.end).some(x=> range.includes(x) )))
+        return warn("Überschneidung!");
 
     tasksRef.add({
         kunde: wizardData.kunde,
         start: wizardData.start,
         end: wizardData.end,
-        status:"Offen"
+        status: "Offen"
     });
 
     closeWizard();
@@ -788,13 +753,13 @@ function saveWizardTask(){
 /* ============================================================
    ✅ BEARBEITEN-POPUP
    ============================================================ */
-let editingTaskId=null;
+let editingTaskId = null;
 
 function openEditPopup(id){
-    let t=tasks.find(x=>x.id===id);
+    let t = tasks.find(x=> x.id===id);
     if(!t) return;
 
-    editingTaskId=id;
+    editingTaskId = id;
 
     document.body.insertAdjacentHTML("beforeend", `
     <div class="dialog-bg" id="editPopup" style="display:flex;">
@@ -826,9 +791,9 @@ function openEditPopup(id){
 }
 
 function closeEditPopup(){
-    let p=document.getElementById("editPopup");
+    let p = document.getElementById("editPopup");
     if(p) p.remove();
-    editingTaskId=null;
+    editingTaskId = null;
 }
 
 function saveEditedTask(){
@@ -837,16 +802,19 @@ function saveEditedTask(){
     let end=document.getElementById("edit_end").value;
     let status=document.getElementById("edit_status").value;
 
-    if(!kunde||!start||!end) return warn("Bitte alle Felder ausfüllen!");
-    if(new Date(end)<new Date(start)) return warn("Enddatum ungültig!");
+    if(!kunde || !start || !end)
+        return warn("Bitte alle Felder ausfüllen!");
 
-    let r=getRange(start,end);
+    if(new Date(end) < new Date(start))
+        return warn("Enddatum ungültig!");
 
-    if(r.some(d=>blocked.some(b=>d>=b.from&&d<=b.to)))
+    let range = getRange(start,end);
+
+    if(range.some(d=> blocked.some(b=> d>=b.from && d<=b.to )))
         return warn("Zeitraum liegt in Sperre!");
 
-    if(tasks.some(t=>t.id!==editingTaskId && 
-        getRange(t.start,t.end).some(x=>r.includes(x))))
+    if(tasks.some(t=> t.id!==editingTaskId &&
+        getRange(t.start,t.end).some(x=> range.includes(x))))
         return warn("Überschneidung!");
 
     tasksRef.doc(editingTaskId).update({kunde,start,end,status});
@@ -858,35 +826,37 @@ function saveEditedTask(){
    ============================================================ */
 function initSwipeToDelete(){
     document.querySelectorAll(".swipe-container").forEach(box=>{
-        let content=box.querySelector(".swipe-content");
-        let delBtn=box.querySelector(".swipe-delete");
-        let id=box.dataset.id;
+        let content = box.querySelector(".swipe-content");
+        let delBtn = box.querySelector(".swipe-delete");
+        let id = box.dataset.id;
 
         let startX=0, moved=0;
 
         content.onmousedown = content.ontouchstart = e=>{
-            startX=(e.touches?e.touches[0].clientX : e.clientX);
+            startX = (e.touches? e.touches[0].clientX : e.clientX);
         };
 
         content.onmousemove = content.ontouchmove = e=>{
-            let x=(e.touches?e.touches[0].clientX : e.clientX);
+            let x = (e.touches? e.touches[0].clientX : e.clientX);
             moved = x - startX;
-            if(moved < 0) content.style.transform = `translateX(${moved}px)`;
+            if(moved < 0)
+                content.style.transform = `translateX(${moved}px)`;
         };
 
         content.onmouseup = content.ontouchend = ()=>{
-            if(moved < -60) content.style.transform="translateX(-120px)";
-            else content.style.transform="translateX(0)";
+            if(moved < -60)
+                content.style.transform = "translateX(-120px)";
+            else
+                content.style.transform = "translateX(0)";
         };
 
         delBtn.onclick = ()=>{
-            if(confirm("Anlage wirklich löschen?")){
+            if(confirm("Anlage wirklich löschen?"))
                 tasksRef.doc(id).delete();
-            }
         };
     });
 }
 </script>
-    
 
-    
+</body>
+</html>
