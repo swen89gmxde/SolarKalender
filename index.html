@@ -2,116 +2,101 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>SolarKalender – PV‑Montageplaner</title>
+<title>SolarKalender – PV‑Montageplaner (LIVE SYNC)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- ✅ Firebase COMPAT SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background:#f5f6fa;
-    padding:20px;
-}
+body { font-family: Arial, sans-serif; background:#f5f6fa; padding:20px; }
 .container { max-width:900px; margin:auto; }
-.card {
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.12);
-}
+.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 3px 8px rgba(0,0,0,0.12); }
 input, button, select {
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border-radius:6px;
-    border:1px solid #ccc;
-    font-size:16px;
+    width:100%; padding:12px; margin-top:10px;
+    border-radius:6px; border:1px solid #ccc; font-size:16px;
 }
-button {
-    background:#0067c4;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
+button { background:#0067c4; color:white; border:none; cursor:pointer; }
 button:hover { background:#004f99; }
 
 .task {
-    padding:15px;
-    background:white;
-    border-left:6px solid #0067c4;
-    margin-bottom:12px;
-    border-radius:6px;
+    padding:15px; background:white; border-left:6px solid #0067c4;
+    margin-bottom:12px; border-radius:6px;
 }
-.done { background:#e4f7e4; border-left-color:#34a853; }
 
 .btn-small {
-    padding:6px 12px;
-    width:auto;
-    background:#ccc;
-    margin-right:5px;
-    cursor:pointer;
-    border-radius:6px;
-    border:none;
+    padding:6px 12px; width:auto; background:#ccc;
+    margin-right:5px; cursor:pointer; border-radius:6px; border:none;
 }
 .btn-delete { background:#d9534f !important; color:white; }
 
 .blocked-row {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    background:#ffe6e6;
-    border-radius:6px;
-    padding:10px 12px;
-    margin-bottom:6px;
-    font-size:16px;
+    display:flex; justify-content:space-between; align-items:center;
+    background:#ffe6e6; padding:10px 12px; border-radius:6px; margin-bottom:6px;
 }
-
 .blocked-delete {
-    background:#d9534f;
-    color:white;
-    border:none;
-    border-radius:4px;
-    padding:4px 10px;
-    font-size:14px;
-    cursor:pointer;
+    background:#d9534f; color:white; border:none;
+    border-radius:4px; padding:4px 10px; cursor:pointer;
 }
 
 .warn {
-    padding:10px;
-    background:#fff3cd;
-    border-left:5px solid #ffcc00;
-    margin-bottom:10px;
-    border-radius:5px;
-    font-weight:bold;
+    padding:10px; background:#fff3cd; border-left:5px solid #ffcc00;
+    margin-bottom:10px; border-radius:5px; font-weight:bold;
 }
+
+.dialog-bg {
+    position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center;
+    z-index:9999; display:none;
+}
+.dialog-box {
+    background:white; padding:20px; border-radius:12px; width:300px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+.dialog-btn {
+    width:100%; padding:10px; margin-top:10px;
+    border-radius:6px; cursor:pointer; border:none; font-size:16px;
+}
+.dialog-red { background:#d9534f; color:white; }
+.dialog-blue { background:#0067c4; color:white; }
 </style>
 </head>
 <body>
 
 <div class="container">
 
-<h1>SolarKalender – PV‑Montageplaner</h1>
+<h1>SolarKalender – PV‑Montageplaner (Live‑Sync)</h1>
 <div id="warnBox"></div>
 
-<button onclick="refreshPage()" 
-        style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
-    🔄 Seite aktualisieren
+<button onclick="location.reload()" 
+style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
+🔄 Seite aktualisieren
 </button>
 
 <!-- Neue Anlage -->
 <div class="card">
 <h2>Neue Anlage einplanen</h2>
-<label>Kunde</label><input id="kunde">
-<label>Startdatum</label><input id="start" type="date">
-<label>Montagedauer (Tage)</label><input id="dauer" type="number" min="1" value="1">
-<button onclick="addTask()">Anlage hinzufügen</button>
+
+<label>Kunde</label>
+<input id="kunde">
+
+<label>Startdatum</label>
+<input id="start" type="date">
+
+<label>Enddatum</label>
+<input id="end" type="date">
+
+<button onclick="prepareAddTask()">Anlage hinzufügen</button>
 </div>
 
 <!-- Sperrzeiten -->
 <div class="card">
 <h2>Gesperrte Tage (von‑bis)</h2>
+
 <label>Von</label><input id="blockFrom" type="date">
 <label>Bis</label><input id="blockTo" type="date">
+
 <button onclick="addBlock()">Zeitraum sperren</button>
 
 <h3>Gesperrte Zeiträume</h3>
@@ -126,172 +111,217 @@ button:hover { background:#004f99; }
 
 </div>
 
+
+<!-- ✅ Konflikt-Popup -->
+<div class="dialog-bg" id="conflictDialog">
+<div class="dialog-box">
+    <h3>Konflikt entdeckt</h3>
+    <p>Der Zeitraum überschneidet sich mit bestehenden Einträgen.</p>
+
+    <button class="dialog-btn dialog-red" onclick="cancelAddTask()">Abbrechen</button>
+    <button class="dialog-btn" style="background:#ffaa00; color:white;" onclick="forceAddTask()">Trotzdem einplanen</button>
+    <button class="dialog-btn dialog-blue" onclick="autoShiftAddTask()">Automatisch verschieben</button>
+</div>
+</div>
+
 <script>
-// Speicher
-let tasks = JSON.parse(localStorage.getItem('pv_tasks') || '[]');
-let blocked = JSON.parse(localStorage.getItem('pv_blocked') || '[]');
+// ------------------------------------------------------------
+// Firebase initialisieren
+// ------------------------------------------------------------
+firebase.initializeApp({
+  apiKey: "AIzaSyCVW2N6uDTjYJec-tlw4ZGiJ_MjxWJLJjI",
+  authDomain: "solarkalender-2bd58.firebaseapp.com",
+  projectId: "solarkalender-2bd58",
+  storageBucket: "solarkalender-2bd58.firebasestorage.app",
+  messagingSenderId: "616937848687",
+  appId: "1:616937848687:web:8772cdb5f6b521e36a329a"
+});
+const db = firebase.firestore();
 
-function saveAll() {
-    localStorage.setItem('pv_tasks', JSON.stringify(tasks));
-    localStorage.setItem('pv_blocked', JSON.stringify(blocked));
-}
+const tasksRef = db.collection("tasks");
+const blockedRef = db.collection("blocked");
 
-function refreshPage() { location.reload(); }
+let tasks = [];
+let blocked = [];
 
-function warn(txt){
-    document.getElementById("warnBox").innerHTML = `<div class='warn'>${txt}</div>`;
-    setTimeout(()=>document.getElementById("warnBox").innerHTML="",4000);
-}
+let pendingTask = null;
 
-// ✅ Datum TT/MM/JJ
-function fmt(dateStr){
-    let d = new Date(dateStr);
-    if (isNaN(d)) return dateStr;
-    let dd = String(d.getDate()).padStart(2,"0");
-    let mm = String(d.getMonth()+1).padStart(2,"0");
-    let yy = String(d.getFullYear()).slice(2);
-    return `${dd}/${mm}/${yy}`;
-}
 
-// Datumshilfen
-function addDays(date,days){
-    let d=new Date(date);
-    d.setDate(d.getDate()+days);
-    return d.toISOString().split("T")[0];
+// ------------------------------------------------------------
+// Echtzeitlistener
+// ------------------------------------------------------------
+tasksRef.onSnapshot(s => { tasks = s.docs.map(d=>({id:d.id,...d.data()})); autoRecalc(); render(); });
+blockedRef.onSnapshot(s=>{ blocked = s.docs.map(d=>({id:d.id,...d.data()})); autoRecalc(); render(); });
+
+
+// ------------------------------------------------------------
+// Hilfen
+// ------------------------------------------------------------
+function fmt(d){
+  let x=new Date(d);
+  return String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0")+"/"+String(x.getFullYear()).slice(2);
 }
-function getDaysRange(start,dauer){
-    let out=[];
-    for(let i=0;i<dauer;i++) out.push(addDays(start,i));
-    return out;
+function addDays(d,n){ let x=new Date(d); x.setDate(x.getDate()+n); return x.toISOString().split("T")[0]; }
+function getRange(start,end){
+  let arr=[], d=new Date(start), e=new Date(end);
+  while(d<=e){ arr.push(d.toISOString().split("T")[0]); d.setDate(d.getDate()+1); }
+  return arr;
 }
-function inBlocked(day){
-    return blocked.some(r => day >= r.from && day <= r.to);
-}
-function isDayOccupied(day){
-    return tasks.some(t => getDaysRange(t.start,t.dauer).includes(day));
-}
-function findNextFreeStart(start,dauer){
-    while(true){
-        let range=getDaysRange(start,dauer);
-        if(!range.some(d=>inBlocked(d) || isDayOccupied(d)))
-            return start;
-        start = addDays(start,1);
-    }
-}
-function autoShift(){
-    tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    for(let t of tasks)
-        t.start = findNextFreeStart(t.start,t.dauer);
+function inBlocked(d){ return blocked.some(b=>d>=b.from && d<=b.to); }
+function anyOverlap(start,end){
+  let r=getRange(start,end);
+  return tasks.some(t=> getRange(t.start,t.end).some(d=>r.includes(d)) );
 }
 
-// Neue Anlage
-function addTask(){
+
+// ------------------------------------------------------------
+// Konflikt-Dialog LOGIK
+// ------------------------------------------------------------
+function prepareAddTask(){
     let kunde=document.getElementById("kunde").value;
     let start=document.getElementById("start").value;
-    let dauer=parseInt(document.getElementById("dauer").value);
+    let end=document.getElementById("end").value;
 
-    if(!kunde || !start || dauer<1){
-        warn("Bitte alle Felder eingeben!");
+    if(!kunde || !start || !end || end<start){
+        warn("Bitte gültige Daten eingeben!");
         return;
     }
 
-    let newStart=findNextFreeStart(start,dauer);
+    pendingTask = { kunde, start, end, status:"Offen" };
 
-    tasks.push({
-        kunde,
-        start:newStart,
-        dauer,
-        status:"Offen"  // ✅ neuer Standardstatus
-    });
+    let r = getRange(start,end);
 
-    autoShift(); saveAll(); render();
+    if(r.some(inBlocked) || anyOverlap(start,end)){
+        document.getElementById("conflictDialog").style.display="flex";
+    } else {
+        saveTask(pendingTask);
+    }
 }
 
-// Sperrzeit hinzufügen
+function cancelAddTask(){
+    pendingTask=null;
+    document.getElementById("conflictDialog").style.display="none";
+}
+
+function forceAddTask(){
+    saveTask(pendingTask); // ✅ Option 1: exakt speichern
+    closeDialog();
+}
+
+function autoShiftAddTask(){
+    let t=pendingTask;
+
+    while(anyOverlap(t.start,t.end) || getRange(t.start,t.end).some(inBlocked)){
+        t.start=addDays(t.start,1);
+        t.end=addDays(t.end,1);
+    }
+    saveTask(t);
+    closeDialog();
+}
+
+function closeDialog(){
+    pendingTask=null;
+    document.getElementById("conflictDialog").style.display="none";
+}
+
+function saveTask(t){
+    tasksRef.add(t);
+}
+
+
+// ------------------------------------------------------------
+// Sperrzeiten
+// ------------------------------------------------------------
 function addBlock(){
-    let from=document.getElementById("blockFrom").value;
+    let f=document.getElementById("blockFrom").value;
     let to=document.getElementById("blockTo").value;
+    if(!f||!to||to<f){ warn("Ungültiger Zeitraum!"); return;}
+    blockedRef.add({from:f,to:to});
+}
+function deleteBlocked(id){ blockedRef.doc(id).delete(); }
 
-    if(!from || !to){ warn("Bitte beide Daten eingeben!"); return; }
-    if(new Date(to)<new Date(from)){ warn("Ungültiger Zeitraum!"); return; }
 
-    blocked.push({from,to});
-    autoShift(); saveAll(); render();
+// ------------------------------------------------------------
+// Automatische Verschiebung (für spätere Anlagen)
+// ------------------------------------------------------------
+function autoRecalc(){
+    tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
+
+    for(let i=0;i<tasks.length;i++){
+        let t=tasks[i];
+        let start=t.start;
+        let end=t.end;
+
+        while(
+          anyOverlap(start,end) || 
+          getRange(start,end).some(inBlocked)
+        ){
+            start=addDays(start,1);
+            end=addDays(end,1);
+        }
+
+        if(start!==t.start){
+            tasksRef.doc(t.id).update({start:start,end:end});
+        }
+    }
 }
 
-// Sperrzeit löschen
-function deleteBlocked(i){
-    blocked.splice(i,1);
-    autoShift(); saveAll(); render();
+
+// ------------------------------------------------------------
+// Rendering
+// ------------------------------------------------------------
+function warn(txt){
+    document.getElementById("warnBox").innerHTML=`<div class='warn'>${txt}</div>`;
+    setTimeout(()=>document.getElementById("warnBox").innerHTML="",5000);
 }
 
-// Render
 function render(){
 
-    // ✅ Gesperrte Zeiträume
+    // Sperrzeiten
     let bl=document.getElementById("blockedList");
     bl.innerHTML="";
-
-    blocked.forEach((r,i)=>{
+    blocked.forEach(b=>{
         let row=document.createElement("div");
         row.className="blocked-row";
-
         row.innerHTML = `
-            <span>${fmt(r.from)} bis ${fmt(r.to)}</span>
-            <button class="blocked-delete" onclick="deleteBlocked(${i})">X</button>
+            <span>${fmt(b.from)} bis ${fmt(b.to)}</span>
+            <button class="blocked-delete" onclick="deleteBlocked('${b.id}')">X</button>
         `;
-
         bl.appendChild(row);
     });
 
-    // ✅ Anlagenliste
-    let list=document.getElementById("taskList");
-    list.innerHTML="";
+    // Anlagen
+    let tl=document.getElementById("taskList");
+    tl.innerHTML="";
     tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
-
-    tasks.forEach((t,i)=>{
-        let end = addDays(t.start, t.dauer-1);
-
-        let div=document.createElement("div");
-        div.className="task";
-
-        div.innerHTML = `
-            <strong>${t.kunde}</strong><br>
-            Start: ${fmt(t.start)}<br>
-            Ende: ${fmt(end)}<br>
-            Dauer: ${t.dauer} Tage<br><br>
+    tasks.forEach(t=>{
+        let d=document.createElement("div");
+        d.className="task";
+        d.innerHTML=`
+        <strong>${t.kunde}</strong><br>
+        Von: ${fmt(t.start)}<br>
+        Bis: ${fmt(t.end)}<br><br>
         `;
 
-        // ✅ Neues Status-Dropdown
-        let select=document.createElement("select");
-        select.innerHTML=`
-            <option ${t.status==="Offen"?"selected":""}>Offen</option>
-            <option ${t.status==="DC begonnen"?"selected":""}>DC begonnen</option>
-            <option ${t.status==="DC abgeschlossen"?"selected":""}>DC abgeschlossen</option>
-            <option ${t.status==="Erledigt"?"selected":""}>Erledigt</option>
-        `;
+        let sel=document.createElement("select");
+        ["Offen","DC begonnen","DC abgeschlossen","Erledigt"].forEach(s=>{
+           sel.innerHTML+=`<option ${t.status===s?"selected":""}>${s}</option>`;
+        });
+        sel.onchange=()=> tasksRef.doc(t.id).update({status:sel.value});
 
-        select.onchange=()=>{
-            t.status = select.value;
-            autoShift(); saveAll(); render();
-        };
+        let del=document.createElement("button");
+        del.className="btn-small btn-delete";
+        del.innerText="Löschen";
+        del.onclick=()=>tasksRef.doc(t.id).delete();
 
-        let delBtn=document.createElement("button");
-        delBtn.className="btn-small btn-delete";
-        delBtn.innerText="Löschen";
-        delBtn.onclick=()=>{
-            tasks.splice(i,1);
-            autoShift(); saveAll(); render();
-        };
+        d.appendChild(sel);
+        d.appendChild(del);
 
-        div.appendChild(select);
-        div.appendChild(delBtn);
-
-        list.appendChild(div);
+        tl.appendChild(d);
     });
+
 }
 
-render();
 </script>
 
 </body>
