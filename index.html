@@ -2,145 +2,111 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>SolarKalender – PV‑Planer (Komplettversion)</title>
+<title>SolarKalender – PV‑Planer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- ✅ Firebase COMPAT SDKs -->
-https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebasempat.js
+<!-- ✅ Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
 <style>
 body {
     font-family: Arial, sans-serif;
-    background:#f5f6fa;
     margin:0; padding:0;
+    background:#f5f6fa;
 }
-
 .container {
     max-width:1000px;
     margin:auto;
     padding:20px;
 }
 
-h1 { margin-top:0; }
-
-/* ============================
-   NEUER "NEUE ANLAGE" BUTTON
-   ============================ */
+/* 🔵 Neuer großer Button */
 .new-task-btn-container {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 15px;
+    display:flex;
+    justify-content:center;
+    margin-top:15px;
 }
-
 .new-task-btn {
-    background: #0067c4;
-    color: white;
-    border: none;
-    padding: 16px 28px;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-    transition: 0.2s ease;
+    background:#0067c4;
+    color:white;
+    border:none;
+    padding:16px 28px;
+    font-size:20px;
+    font-weight:bold;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,0.18);
 }
-
-.new-task-btn:hover {
-    background: #0055a3;
-    transform: translateY(-2px);
-}
-
 .plus-icon {
-    background: white;
-    color: #0067c4;
-    font-size: 22px;
-    font-weight: bold;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background:white;
+    color:#0067c4;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:bold;
 }
 
-/* ============================
-   MONATSKALENDER (HYBRID)
-   ============================ */
+/* 🔵 Kalender */
 .calendar-container {
     background:white;
     border-radius:10px;
     padding:20px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.15);
     margin-bottom:20px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
 }
-
 .calendar-header {
     display:flex;
     justify-content:space-between;
-    align-items:center;
     margin-bottom:10px;
 }
-
 .calendar-header button {
-    width:auto;
     padding:6px 12px;
     background:#0067c4;
     color:white;
-    border-radius:6px;
     border:none;
+    border-radius:6px;
     cursor:pointer;
 }
-
 .calendar-grid {
     display:grid;
     grid-template-columns:repeat(8,1fr);
     gap:6px;
 }
-
-/* KW links */
 .kw-cell {
-    background:#f0f0f0;
+    background:#eee;
     text-align:center;
-    font-weight:bold;
     padding:8px 0;
-    border-radius:6px;
+    font-weight:bold;
 }
-
-/* Wochentage */
 .weekday-header {
     background:#f5f6fa;
     text-align:center;
-    font-weight:bold;
     padding:8px 0;
-    border-radius:6px;
+    font-weight:bold;
 }
-
-/* Tage */
 .calendar-day {
-    background:#ffffff;
+    background:white;
+    border:1px solid #ddd;
     border-radius:6px;
     min-height:100px;
     padding:5px;
-    border:1px solid #ddd;
     cursor:pointer;
-    overflow:hidden;
 }
-
 .calendar-day-number {
     font-size:14px;
     font-weight:bold;
 }
-
-/* Farbbalken */
-.day-bar { 
-    height:6px; 
-    border-radius:3px; 
-    margin-top:4px; 
+.day-bar {
+    height:6px;
+    margin-top:4px;
+    border-radius:3px;
 }
 .bar-offen { background:#fabb00; }
 .bar-dcstart { background:#ff8a00; }
@@ -148,13 +114,7 @@ h1 { margin-top:0; }
 .bar-done { background:#3da35c; }
 .bar-block { background:#d9534f; }
 
-.calendar-day div {
-    line-height:1.15;
-}
-
-/* ============================
-   TAGESDETAILS
-   ============================ */
+/* 🔵 Tagesdetails */
 .day-details {
     background:white;
     padding:20px;
@@ -163,486 +123,115 @@ h1 { margin-top:0; }
     margin-bottom:20px;
 }
 
-.task {
-    padding:15px;
-    background:white;
-    border-left:6px solid #0067c4;
-    margin-bottom:12px;
-    border-radius:6px;
-}
-
-/* ============================
-   SWIPE TO DELETE
-   ============================ */
-.swipe-container {
-    position:relative;
-    overflow:hidden;
-}
-.swipe-content {
-    position:relative;
-    z-index:2;
-    background:white;
-    transition:transform 0.25s;
-    padding:15px;
-}
-.swipe-delete {
-    position:absolute;
-    right:0; top:0; bottom:0;
-    width:120px;
-    background:#d9534f;
-    color:white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-weight:bold;
-    z-index:1;
-    font-size:16px;
-}
-
-/* ============================
-   EDIT-POPUP
-   ============================ */
-.dialog-bg {
-    position:fixed;
-    left:0; top:0;
-    width:100%; height:100%;
-    background:rgba(0,0,0,0.4);
-    display:none;
-    justify-content:center;
-    align-items:center;
-    z-index:5000;
-}
-
-.dialog-box {
-    width:300px;
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.35);
-}
-
-.dialog-btn {
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-}
-
-.dialog-blue { background:#0067c4; color:white; }
-.dialog-red { background:#d9534f; color:white; }
-
-/* ============================
-   WARNUNG
-   ============================ */
+/* 🔵 Warnung */
 .warn {
     background:#fff3cd;
-    border-left:5px solid #ffcc00;
     padding:10px;
-    margin-bottom:10px;
-    border-radius:5px;
+    border-left:5px solid #ffcc00;
     font-weight:bold;
 }
+</style>
+</head>
+<body>
+<div class="container">
 
-/* ============================
-   WIZARD C (Bottom Sheet)
-   ============================ */
-#wizardBg {
-    display:none;
-    position:fixed;
-    left:0; top:0;
+    <h1>SolarKalender – PV‑Montageplaner</h1>
+    <div id="warnBox"></div>
+
+    <!-- Seite aktualisieren -->
+    <button onclick="location.reload()"
+            style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
+        🔄 Seite aktualisieren
+    </button>
+
+    <!-- ✅ Neue Anlage -->
+    <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
+        <h2>Neue Anlage einplanen</h2>
+
+        <div class="new-task-btn-container">
+            <button class="new-task-btn" onclick="openWizard()">
+                <span class="plus-icon">+</span>
+                Neue Anlage
+            </button>
+        </div>
+    </div>
+
+    <!-- ✅ Sperrzeiten -->
+    <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
+        <h2>Gesperrte Tage (von‑bis)</h2>
+
+        <label>Von</label>
+        <input id="blockFrom" type="date">
+
+        <label>Bis</label>
+        <input id="blockTo" type="date">
+
+        <label>Grund (optional)</label>
+        <input id="blockReason" type="text" placeholder="z.B. Urlaub, Wetter, Material fehlt">
+
+        <button onclick="addBlock()">Zeitraum sperren</button>
+
+        <h3>Gesperrte Zeiträume</h3>
+        <div id="blockedList"></div>
+    </div>
+
+    <!-- ✅ Monatskalender -->
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button onclick="prevMonth()">◀</button>
+            <h2 id="monthLabel"></h2>
+            <button onclick="nextMonth()">▶</button>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+
+    <!-- ✅ Tagesdetails -->
+    <div class="day-details">
+        <h2 id="selectedDayTitle">Details zum Tag</h2>
+        <div id="dayTasks"></div>
+    </div>
+
+</div>
+<!-- ✅ WIZARD C (Bottom Sheet) -->
+<div id="wizardBg" style="
+    display:none; position:fixed; left:0; top:0;
     width:100%; height:100%;
     background:rgba(0,0,0,0.45);
     backdrop-filter:blur(3px);
     z-index:9999;
-    justify-content:flex-end;
-}
-
-#wizardSheet {
-    background:white;
-    width:100%;
-    max-height:80%;
-    border-radius:16px 16px 0 0;
-    padding:20px;
-    display:flex;
-    flex-direction:column;
-    transform:translateY(100%);
-    transition:0.3s ease;
-}
-</style>
-</head>
-
-<body>
-<div class="container">
-
-<h1>SolarKalender – PV‑Montageplaner</h1>
-<div id="warnBox"></div>
-
-<button onclick="location.reload()"
-style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
-🔄 Seite aktualisieren
-</button>
-
-<!-- ✅ Neue Anlage -->
-<div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
-<h2>Neue Anlage einplanen</h2>
-
-<div class="new-task-btn-container">
-    <button class="new-task-btn" onclick="openWizard()">
-        <span class="plus-icon">+</span>
-        Neue Anlage
-    </button>
-</div>
-
-</div>
-
-<!-- ✅ Sperrzeiten -->
-<div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
-<h2>Gesperrte Tage (von‑bis)</h2>
-
-<label>Von</label><input id="blockFrom" type="date">
-<label>Bis</label><input id="blockTo" type="date">
-
-<label>Grund (optional)</label>
-<input id="blockReason" type="text" placeholder="z.B. Urlaub, Wetter, Material fehlt">
-
-<button onclick="addBlock()">Zeitraum sperren</button>
-
-<h3>Gesperrte Zeiträume</h3>
-<div id="blockedList"></div>
-</div>
-
-<!-- ✅ Kalender -->
-<div class="calendar-container">
-<div class="calendar-header">
-    <button onclick="prevMonth()">◀</button>
-    <h2 id="monthLabel"></h2>
-    <button onclick="nextMonth()">▶</button>
-</div>
-
-<div class="calendar-grid" id="calendarGrid"></div>
-</div>
-
-<!-- ✅ Tagesdetails -->
-<div class="day-details">
-<h2 id="selectedDayTitle">Details zum Tag</h2>
-<div id="dayTasks"></div>
-</div>
-    <script>
-/* ============================================================
-   ✅ FIREBASE INITIALISIEREN
-   ============================================================ */
-firebase.initializeApp({
-  apiKey: "AIzaSyCVW2N6uDTjYJec-tlw4ZGiJ_MjxWJLJjI",
-  authDomain: "solarkalender-2bd58.firebaseapp.com",
-  projectId: "solarkalender-2bd58",
-  storageBucket: "solarkalender-2bd58.firebasestorage.app",
-  messagingSenderId: "616937848687",
-  appId: "1:616937848687:web:8772cdb5f6b521e36a329a"
-});
-
-const db = firebase.firestore();
-const tasksRef = db.collection("tasks");
-const blockedRef = db.collection("blocked");
-
-/* ============================================================
-   ✅ GLOBALE VARIABLEN
-   ============================================================ */
-let tasks = [];
-let blocked = [];
-let currentYear;
-let currentMonth;
-let selectedDay = null;
-
-/* ============================================================
-   ✅ HELFER (Formatierung & Datum)
-   ============================================================ */
-function fmt(d){
-    let x = new Date(d);
-    return String(x.getDate()).padStart(2,"0") + "/" +
-           String(x.getMonth()+1).padStart(2,"0") + "/" +
-           String(x.getFullYear()).slice(2);
-}
-
-function getRange(start,end){
-    let out = [];
-    let s = new Date(start), e = new Date(end);
-    while(s <= e){
-        out.push(s.toISOString().split("T")[0]);
-        s.setDate(s.getDate()+1);
-    }
-    return out;
-}
-
-function getISOWeek(date){
-    const t = new Date(date);
-    const day = (t.getDay()+6)%7;
-    t.setDate(t.getDate() - day + 3);
-    const w1 = new Date(t.getFullYear(),0,4);
-    return 1 + Math.round(((t - w1) / 86400000 - 3 + ((w1.getDay()+6)%7)) / 7);
-}
-
-/* ============================================================
-   ✅ LIVE-SYNC
-   ============================================================ */
-tasksRef.onSnapshot(snap=>{
-    tasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderCalendar();
-    renderDayDetails(selectedDay);
-});
-
-blockedRef.onSnapshot(snap=>{
-    blocked = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderCalendar();
-    renderDayDetails(selectedDay);
-});
-
-/* ============================================================
-   ✅ WARNBOX
-   ============================================================ */
-function warn(msg){
-    document.getElementById("warnBox").innerHTML =
-        `<div class="warn">${msg}</div>`;
-    setTimeout(()=> document.getElementById("warnBox").innerHTML="", 3000);
-}
-
-/* ============================================================
-   ✅ LABELS UNTER KALENDERTAGEN (Kunde + Grund)
-   ============================================================ */
-function getLabelsForDay(dateKey){
-    let out = [];
-
-    blocked.forEach(b=>{
-        if(getRange(b.from,b.to).includes(dateKey)){
-            out.push({
-                text: b.grund ? b.grund.substring(0,12)+"…" : "Gesperrt",
-                type: "block"
-            });
-        }
-    });
-
-    tasks.forEach(t=>{
-        if(getRange(t.start,t.end).includes(dateKey)){
-            out.push({
-                text: t.kunde.substring(0,12) + (t.kunde.length>12?"…":""),
-                type: t.status
-            });
-        }
-    });
-
-    return out.slice(0,3);
-}
-
-/* ============================================================
-   ✅ FARB-BALKEN (Status / Sperre)
-   ============================================================ */
-function getBarsForDay(dateKey){
-    let bars = [];
-
-    blocked.forEach(b=>{
-        if(getRange(b.from,b.to).includes(dateKey)){
-            bars.push("bar-block");
-        }
-    });
-
-    tasks.forEach(t=>{
-        if(getRange(t.start,t.end).includes(dateKey)){
-            if(t.status==="Offen") bars.push("bar-offen");
-            if(t.status==="DC begonnen") bars.push("bar-dcstart");
-            if(t.status==="DC abgeschlossen") bars.push("bar-dcend");
-            if(t.status==="Erledigt") bars.push("bar-done");
-        }
-    });
-
-    return bars.slice(0,3);
-}
-
-/* ============================================================
-   ✅ MONATS-KALENDER RENDERN
-   ============================================================ */
-function renderCalendar(){
-
-    const names=["Januar","Februar","März","April","Mai",
-                 "Juni","Juli","August","September","Oktober","November","Dezember"];
-
-    document.getElementById("monthLabel").innerText =
-        names[currentMonth] + " " + currentYear;
-
-    const grid = document.getElementById("calendarGrid");
-    grid.innerHTML = "";
-
-    grid.innerHTML += `<div class="weekday-header">KW</div>`;
-    ["Mo","Di","Mi","Do","Fr","Sa","So"].forEach(w=>{
-        grid.innerHTML += `<div class="weekday-header">${w}</div>`;
-    });
-
-    let firstDay = new Date(currentYear, currentMonth, 1);
-    let offset = (firstDay.getDay()+6)%7;
-    let cur = new Date(currentYear, currentMonth, 1 - offset);
-
-    for(let week=0; week<6; week++){
-        grid.innerHTML += `<div class="kw-cell">${getISOWeek(cur)}</div>`;
-
-        for(let d=0; d<7; d++){
-
-            let dateKey = cur.toISOString().split("T")[0];
-            let html = `<div class="calendar-day-number">${cur.getDate()}</div>`;
-
-            getBarsForDay(dateKey).forEach(b=>{
-                html += `<div class="day-bar ${b}"></div>`;
-            });
-
-            getLabelsForDay(dateKey).forEach(l=>{
-                let col="#444";
-                if(l.type==="block") col="#d9534f";
-                if(l.type==="Offen") col="#fabb00";
-                if(l.type==="DC begonnen") col="#ff8a00";
-                if(l.type==="DC abgeschlossen") col="#0067c4";
-                if(l.type==="Erledigt") col="#3da35c";
-
-                html += `<div style="font-size:11px; color:${col}; overflow:hidden;">${l.text}</div>`;
-            });
-
-            grid.innerHTML += `
-                <div class="calendar-day"
-                     onclick="selectedDay='${dateKey}'; renderDayDetails('${dateKey}'); scrollToDayDetails();"
-                     style="background:${cur.getMonth()===currentMonth?'#fff':'#f0f0f0'};">
-                     ${html}
-                </div>
-            `;
-
-            cur.setDate(cur.getDate()+1);
-        }
-    }
-}
-
-/* ============================================================
-   ✅ TAGESDETAILS
-   ============================================================ */
-function renderDayDetails(date){
-    if(!date) return;
-
-    document.getElementById("selectedDayTitle").innerText =
-        "Details für " + fmt(date);
-
-    let html="";
-
-    blocked.forEach(b=>{
-        if(getRange(b.from,b.to).includes(date)){
-            html += `
-            <div class="task" style="border-left-color:#d9534f;">
-                <strong>Gesperrt</strong><br>
-                ${fmt(b.from)} – ${fmt(b.to)}<br>
-                ${b.grund ? `<em>${b.grund}</em>` : ""}
-                <br>
-                <button class="btn-small btn-delete" onclick="deleteBlocked('${b.id}')">
-                    Löschen
-                </button>
-            </div>`;
-        }
-    });
-
-    tasks.forEach(t=>{
-        if(getRange(t.start,t.end).includes(date)){
-            html += `
-            <div class="swipe-container" data-id="${t.id}">
-                <div class="swipe-delete">LÖSCHEN</div>
-                <div class="swipe-content task">
-                    <strong>${t.kunde}</strong><br>
-                    ${fmt(t.start)} – ${fmt(t.end)}<br>
-                    Status: ${t.status}<br><br>
-                    <button class="btn-small" onclick="openEditPopup('${t.id}')">
-                        Bearbeiten
-                    </button>
-                </div>
-            </div>`;
-        }
-    });
-
-    if(html==="") html = "<p>Keine Einträge.</p>";
-
-    document.getElementById("dayTasks").innerHTML = html;
-
-    initSwipeToDelete();
-}
-
-/* ============================================================
-   ✅ MONATSNAVIGATION
-   ============================================================ */
-function prevMonth(){
-    currentMonth--;
-    if(currentMonth<0){ currentMonth=11; currentYear--; }
-    renderCalendar();
-}
-function nextMonth(){
-    currentMonth++;
-    if(currentMonth>11){ currentMonth=0; currentYear++; }
-    renderCalendar();
-}
-
-/* ============================================================
-   ✅ SPERRZEIT SPEICHERN
-   ============================================================ */
-function addBlock(){
-    let f=document.getElementById("blockFrom").value;
-    let t=document.getElementById("blockTo").value;
-    let g=document.getElementById("blockReason").value;
-
-    if(!f || !t) return warn("Bitte beide Daten eingeben!");
-    if(new Date(t) < new Date(f)) return warn("Ungültiger Zeitraum!");
-
-    blockedRef.add({ from:f, to:t, grund:g||"" });
-
-    document.getElementById("blockFrom").value="";
-    document.getElementById("blockTo").value="";
-    document.getElementById("blockReason").value="";
-}
-
-/* ============================================================
-   ✅ SPERRZEIT LÖSCHEN
-   ============================================================ */
-function deleteBlocked(id){
-    if(confirm("Sperre löschen?")){
-        blockedRef.doc(id).delete();
-    }
-}
-
-/* ============================================================
-   ✅ START
-   ============================================================ */
-(function(){
-    let now = new Date();
-    currentYear = now.getFullYear();
-    currentMonth = now.getMonth();
-    selectedDay = now.toISOString().split("T")[0];
-
-    renderCalendar();
-    renderDayDetails(selectedDay);
-})();
-</script>
-<!-- ✅ WIZARD C – Bottom Sheet für neue Anlagen -->
-<div id="wizardBg" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.45); backdrop-filter:blur(3px); z-index:9999; justify-content:flex-end;">
-    <div id="wizardSheet" style="background:white; width:100%; max-height:80%; border-radius:16px 16px 0 0; padding:20px; display:flex; flex-direction:column; transform:translateY(100%); transition:0.3s;">
+    justify-content:flex-end;">
+    
+    <div id="wizardSheet" style="
+        background:white;
+        width:100%;
+        max-height:80%;
+        border-radius:16px 16px 0 0;
+        padding:20px;
+        display:flex;
+        flex-direction:column;
+        transform:translateY(100%);
+        transition:0.3s;">
         
-        <div style="width:60px; height:6px; background:#ccc; border-radius:3px; margin:0 auto 15px auto;"></div>
+        <div style="width:60px;height:6px;background:#ccc;border-radius:3px;margin:0 auto 15px auto;"></div>
 
         <h2 id="wizardTitle"></h2>
         <div id="wizardContent"></div>
 
-        <button id="wizardNextBtn" style="padding:12px; background:#0067c4; color:white; border:none; border-radius:8px; margin-top:20px;">
+        <button id="wizardNextBtn" style="padding:12px;background:#0067c4;color:white;border:none;border-radius:8px;margin-top:20px;">
             Weiter
         </button>
-        <button id="wizardCancelBtn" style="padding:10px; background:#999; color:white; border:none; border-radius:8px; margin-top:10px;">
+
+        <button id="wizardCancelBtn" style="padding:10px;background:#999;color:white;border:none;border-radius:8px;margin-top:10px;">
             Abbrechen
         </button>
+
     </div>
 </div>
 
-
 <script>
 /* ============================================================
-   ✅ WIZARD C – STEP-BY-STEP
+   ✅ WIZARD C (Workflow Start→Ende→Kunde)
    ============================================================ */
 let wizardStep = 1;
 let wizardData = {};
@@ -650,15 +239,14 @@ let wizardData = {};
 function openWizard(){
     wizardStep = 1;
     wizardData = {};
-
-    document.getElementById("wizardBg").style.display = "flex";
-    setTimeout(()=> document.getElementById("wizardSheet").style.transform = "translateY(0%)", 10 );
+    document.getElementById("wizardBg").style.display="flex";
+    setTimeout(()=> document.getElementById("wizardSheet").style.transform="translateY(0%)", 10);
     renderWizardStep();
 }
 
 function closeWizard(){
-    document.getElementById("wizardSheet").style.transform = "translateY(100%)";
-    setTimeout(()=> document.getElementById("wizardBg").style.display = "none", 250 );
+    document.getElementById("wizardSheet").style.transform="translateY(100%)";
+    setTimeout(()=> document.getElementById("wizardBg").style.display="none", 250);
 }
 
 document.getElementById("wizardCancelBtn").onclick = closeWizard;
@@ -666,7 +254,7 @@ document.getElementById("wizardCancelBtn").onclick = closeWizard;
 document.getElementById("wizardNextBtn").onclick = ()=>{
     if(!processWizardStep()) return;
     wizardStep++;
-    if(wizardStep > 4){
+    if(wizardStep>4){
         saveWizardTask();
         return;
     }
@@ -674,23 +262,23 @@ document.getElementById("wizardNextBtn").onclick = ()=>{
 };
 
 function renderWizardStep(){
-    const title = document.getElementById("wizardTitle");
-    const content = document.getElementById("wizardContent");
-    const next = document.getElementById("wizardNextBtn");
+    const title=document.getElementById("wizardTitle");
+    const content=document.getElementById("wizardContent");
+    const next=document.getElementById("wizardNextBtn");
 
     if(wizardStep===1){
         title.innerText = "Startdatum wählen";
-        content.innerHTML = `<input id="wizStart" type="date" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px;">`;
+        content.innerHTML = `<input id="wizStart" type="date" style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;">`;
         next.innerText = "Weiter";
     }
     if(wizardStep===2){
         title.innerText = "Enddatum wählen";
-        content.innerHTML = `<input id="wizEnd" type="date" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px;">`;
+        content.innerHTML = `<input id="wizEnd" type="date" style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;">`;
         next.innerText = "Weiter";
     }
     if(wizardStep===3){
         title.innerText = "Kunde eingeben";
-        content.innerHTML = `<input id="wizKunde" type="text" placeholder="Kunde" style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px;">`;
+        content.innerHTML = `<input id="wizKunde" type="text" placeholder="Kunde" style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;">`;
         next.innerText = "Weiter";
     }
     if(wizardStep===4){
@@ -706,44 +294,43 @@ function renderWizardStep(){
 
 function processWizardStep(){
     if(wizardStep===1){
-        let v = document.getElementById("wizStart").value;
+        let v=document.getElementById("wizStart").value;
         if(!v){ warn("Startdatum fehlt!"); return false; }
-        wizardData.start = v;
+        wizardData.start=v;
     }
-
     if(wizardStep===2){
-        let v = document.getElementById("wizEnd").value;
+        let v=document.getElementById("wizEnd").value;
         if(!v){ warn("Enddatum fehlt!"); return false; }
-        if(new Date(v) < new Date(wizardData.start)){
+        if(new Date(v)<new Date(wizardData.start)){
             warn("Enddatum muss nach Startdatum liegen!");
             return false;
         }
-        wizardData.end = v;
+        wizardData.end=v;
     }
-
     if(wizardStep===3){
-        let v = document.getElementById("wizKunde").value.trim();
+        let v=document.getElementById("wizKunde").value.trim();
         if(!v){ warn("Kunde fehlt!"); return false; }
-        wizardData.kunde = v;
+        wizardData.kunde=v;
     }
-
     return true;
 }
 
 function saveWizardTask(){
-    let range = getRange(wizardData.start, wizardData.end);
+    let r = getRange(wizardData.start, wizardData.end);
 
-    if(range.some(d=> blocked.some(b=> d>=b.from && d<=b.to )))
-        return warn("Zeitraum liegt in Sperre!");
+    // Sperre
+    if(r.some(d=>blocked.some(b=>d>=b.from && d<=b.to)))
+        return warn("Zeitraum liegt in Sperrzeit!");
 
-    if(tasks.some(t=> getRange(t.start,t.end).some(x=> range.includes(x) )))
+    // Überschneidung
+    if(tasks.some(t=>getRange(t.start,t.end).some(x=>r.includes(x))))
         return warn("Überschneidung!");
 
     tasksRef.add({
         kunde: wizardData.kunde,
         start: wizardData.start,
         end: wizardData.end,
-        status: "Offen"
+        status:"Offen"
     });
 
     closeWizard();
@@ -756,7 +343,7 @@ function saveWizardTask(){
 let editingTaskId = null;
 
 function openEditPopup(id){
-    let t = tasks.find(x=> x.id===id);
+    let t = tasks.find(x=>x.id===id);
     if(!t) return;
 
     editingTaskId = id;
@@ -764,18 +351,17 @@ function openEditPopup(id){
     document.body.insertAdjacentHTML("beforeend", `
     <div class="dialog-bg" id="editPopup" style="display:flex;">
         <div class="dialog-box">
-
             <h3>Anlage bearbeiten</h3>
 
             <label>Kunde</label>
             <input id="edit_kunde" value="${t.kunde}">
-
+            
             <label>Startdatum</label>
             <input id="edit_start" type="date" value="${t.start}">
-
+            
             <label>Enddatum</label>
             <input id="edit_end" type="date" value="${t.end}">
-
+            
             <label>Status</label>
             <select id="edit_status">
                 <option ${t.status==="Offen"?"selected":""}>Offen</option>
@@ -791,7 +377,7 @@ function openEditPopup(id){
 }
 
 function closeEditPopup(){
-    let p = document.getElementById("editPopup");
+    let p=document.getElementById("editPopup");
     if(p) p.remove();
     editingTaskId = null;
 }
@@ -802,20 +388,17 @@ function saveEditedTask(){
     let end=document.getElementById("edit_end").value;
     let status=document.getElementById("edit_status").value;
 
-    if(!kunde || !start || !end)
-        return warn("Bitte alle Felder ausfüllen!");
+    if(!kunde || !start || !end) return warn("Bitte alle Felder ausfüllen!");
+    if(new Date(end)<new Date(start)) return warn("Enddatum ungültig!");
 
-    if(new Date(end) < new Date(start))
-        return warn("Enddatum ungültig!");
+    let r = getRange(start,end);
 
-    let range = getRange(start,end);
+    if(r.some(d=> blocked.some(b=> d>=b.from && d<=b.to)))
+        return warn("Sperrzeit blockiert!");
 
-    if(range.some(d=> blocked.some(b=> d>=b.from && d<=b.to )))
-        return warn("Zeitraum liegt in Sperre!");
-
-    if(tasks.some(t=> t.id!==editingTaskId &&
-        getRange(t.start,t.end).some(x=> range.includes(x))))
-        return warn("Überschneidung!");
+    if(tasks.some(t=>t.id!==editingTaskId &&
+        getRange(t.start,t.end).some(x=>r.includes(x))))
+        return warn("Kollision mit anderer Anlage!");
 
     tasksRef.doc(editingTaskId).update({kunde,start,end,status});
     closeEditPopup();
@@ -827,32 +410,31 @@ function saveEditedTask(){
 function initSwipeToDelete(){
     document.querySelectorAll(".swipe-container").forEach(box=>{
         let content = box.querySelector(".swipe-content");
-        let delBtn = box.querySelector(".swipe-delete");
+        let btn = box.querySelector(".swipe-delete");
         let id = box.dataset.id;
 
-        let startX=0, moved=0;
+        let startX = 0;
+        let moved = 0;
 
         content.onmousedown = content.ontouchstart = e=>{
-            startX = (e.touches? e.touches[0].clientX : e.clientX);
+            startX = (e.touches ? e.touches[0].clientX : e.clientX);
         };
 
         content.onmousemove = content.ontouchmove = e=>{
-            let x = (e.touches? e.touches[0].clientX : e.clientX);
+            let x = (e.touches ? e.touches[0].clientX : e.clientX);
             moved = x - startX;
-            if(moved < 0)
-                content.style.transform = `translateX(${moved}px)`;
+            if(moved < 0) content.style.transform = `translateX(${moved}px)`;
         };
 
         content.onmouseup = content.ontouchend = ()=>{
-            if(moved < -60)
-                content.style.transform = "translateX(-120px)";
-            else
-                content.style.transform = "translateX(0)";
+            if(moved < -60) content.style.transform="translateX(-120px)";
+            else content.style.transform="translateX(0)";
         };
 
-        delBtn.onclick = ()=>{
-            if(confirm("Anlage wirklich löschen?"))
+        btn.onclick = ()=>{
+            if(confirm("Anlage wirklich löschen?")){
                 tasksRef.doc(id).delete();
+            }
         };
     });
 }
