@@ -22,6 +22,51 @@ body {
     padding:20px;
 }
 
+/* ============================
+   NEUER "NEUE ANLAGE" BUTTON
+   ============================ */
+.new-task-btn-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.new-task-btn {
+    background: #0067c4;
+    color: white;
+    border: none;
+    padding: 16px 28px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    transition: 0.2s ease;
+}
+
+.new-task-btn:hover {
+    background: #0055a3;
+    transform: translateY(-2px);
+}
+
+.plus-icon {
+    background: white;
+    color: #0067c4;
+    font-size: 22px;
+    font-weight: bold;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}    
+    
+}   
 h1 { margin-top:0; }
 
 /* ============================
@@ -237,10 +282,17 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <!-- ====================================
      ANLAGE ANLEGEN (Wizard ersetzt Button)
 ==================================== -->
+
 <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
 <h2>Neue Anlage einplanen</h2>
 
-<button onclick="openWizard()">Anlage hinzufügen</button>
+<div class="new-task-btn-container">
+    <button class="new-task-btn" onclick="openWizard()">
+        <span class="plus-icon">+</span>
+        Neue Anlage
+    </button>
+</div>
+
 </div>
 
 <!-- ====================================
