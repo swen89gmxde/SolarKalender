@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>SolarKalender – PV‑Planer</title>
+<title>SolarKalender – PV‑Planer (Komplettversion)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- ✅ Firebase COMPAT SDKs -->
@@ -10,54 +10,89 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
 <style>
-body { font-family: Arial; background:#f5f6fa; margin:0; padding:0; }
-.container { max-width:1000px; margin:auto; padding:20px; }
+body {
+    font-family: Arial, sans-serif;
+    background:#f5f6fa;
+    margin:0; padding:0;
+}
+
+.container {
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+}
+
 h1 { margin-top:0; }
 
-/* --- Monatskalender --- */
+/* ============================
+   MONATSKALENDER (HYBRID)
+   ============================ */
 .calendar-container {
-    background:white; border-radius:10px; padding:20px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.15); margin-bottom:20px;
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+    margin-bottom:20px;
 }
-.calendar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+
+.calendar-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+
 .calendar-header button {
-    background:#0067c4; color:white; border:none; border-radius:6px;
-    padding:6px 12px; cursor:pointer;
+    width:auto;
+    padding:6px 12px;
+    background:#0067c4;
+    color:white;
+    border-radius:6px;
+    border:none;
+    cursor:pointer;
 }
-.calendar-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
+
+.calendar-grid {
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    gap:6px;
+}
 
 /* KW links */
 .kw-cell {
     background:#f0f0f0;
-    text-align:center; font-weight:bold;
-    padding:10px 0; border-radius:6px;
-}
-
-.weekday-header {
-    background:#f5f6fa;
-    font-weight:bold;
     text-align:center;
-    padding:10px 0;
+    font-weight:bold;
+    padding:8px 0;
     border-radius:6px;
 }
 
+/* Wochentage */
+.weekday-header {
+    background:#f5f6fa;
+    text-align:center;
+    font-weight:bold;
+    padding:8px 0;
+    border-radius:6px;
+}
+
+/* Tage */
 .calendar-day {
     background:#ffffff;
     border-radius:6px;
-    min-height:90px;
+    min-height:100px;
     padding:5px;
-    position:relative;
-    cursor:pointer;
     border:1px solid #ddd;
+    cursor:pointer;
     overflow:hidden;
 }
-.calendar-day:hover { background:#f0f8ff; }
 
 .calendar-day-number {
-    font-size:14px; font-weight:bold;
+    font-size:14px;
+    font-weight:bold;
 }
 
-/* Balken */
+/* Farbbalken */
 .day-bar { height:6px; border-radius:3px; margin-top:4px; }
 .bar-offen { background:#fabb00; }
 .bar-dcstart { background:#ff8a00; }
@@ -65,56 +100,125 @@ h1 { margin-top:0; }
 .bar-done { background:#3da35c; }
 .bar-block { background:#d9534f; }
 
-/* Text im Kalender */
-.calendar-day div { line-height:1.15; }
+/* Labels unter Tagen */
+.calendar-day div {
+    line-height:1.15;
+}
 
-/* Tagesdetails */
+/* ============================
+   TAGESDETAILS
+   ============================ */
 .day-details {
-    background:white; padding:20px; border-radius:10px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.12); margin-bottom:20px;
-}
-.task {
-    padding:15px; background:white;
-    border-left:6px solid #0067c4;
-    margin-bottom:12px; border-radius:6px;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.12);
+    margin-bottom:20px;
 }
 
-/* Swipe-Delete */
-.swipe-container { position:relative; overflow:hidden; }
+.task {
+    padding:15px;
+    background:white;
+    border-left:6px solid #0067c4;
+    margin-bottom:12px;
+    border-radius:6px;
+}
+
+/* ============================
+   SWIPE TO DELETE
+   ============================ */
+.swipe-container {
+    position:relative;
+    overflow:hidden;
+}
 .swipe-content {
-    position:relative; z-index:2; background:white;
-    transition:transform 0.25s; padding:15px;
+    position:relative;
+    z-index:2;
+    background:white;
+    transition:transform 0.25s;
+    padding:15px;
 }
 .swipe-delete {
-    position:absolute; right:0; top:0; bottom:0; width:120px;
-    background:#d9534f; color:white; display:flex;
-    justify-content:center; align-items:center;
-    font-weight:bold; z-index:1;
+    position:absolute;
+    right:0; top:0; bottom:0;
+    width:120px;
+    background:#d9534f;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:bold;
+    z-index:1;
+    font-size:16px;
 }
 
-/* Edit-Popup */
+/* ============================
+   EDIT-POPUP
+   ============================ */
 .dialog-bg {
-    position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.6);
-    display:flex; justify-content:center; align-items:center;
+    position:fixed;
+    left:0; top:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.4);
+    display:none;
+    justify-content:center;
+    align-items:center;
     z-index:5000;
 }
 .dialog-box {
-    background:white; padding:20px; width:300px;
-    border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.4);
+    width:300px;
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.35);
 }
 .dialog-btn {
-    width:100%; padding:10px; margin-top:10px;
-    border:none; border-radius:6px; cursor:pointer;
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
 }
 .dialog-blue { background:#0067c4; color:white; }
 .dialog-red { background:#d9534f; color:white; }
 
-/* Warnbox */
+/* ============================
+   WARNUNG
+   ============================ */
 .warn {
-    background:#fff3cd; border-left:5px solid #ffcc00;
-    padding:10px; margin-bottom:10px; border-radius:5px;
+    background:#fff3cd;
+    border-left:5px solid #ffcc00;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:5px;
     font-weight:bold;
+}
+
+/* ============================
+   WIZARD C (Bottom Sheet)
+   ============================ */
+#wizardBg {
+    display:none;
+    position:fixed;
+    left:0; top:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.45);
+    backdrop-filter:blur(3px);
+    z-index:9999;
+    justify-content:flex-end;
+}
+
+#wizardSheet {
+    background:white;
+    width:100%;
+    max-height:80%;
+    border-radius:16px 16px 0 0;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    transform:translateY(100%);
+    transition:0.3s ease;
 }
 </style>
 </head>
@@ -130,8 +234,9 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 🔄 Seite aktualisieren
 </button>
 
-
-<!-- ✅ ANLAGE ANLEGEN -->
+<!-- ====================================
+     ANLAGE ANLEGEN (Wizard ersetzt Button)
+==================================== -->
 <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
 <h2>Neue Anlage einplanen</h2>
 
@@ -144,11 +249,12 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <label>Enddatum</label>
 <input id="end" type="date">
 
-<button onclick="prepareAddTask()">Anlage hinzufügen</button>
+<button onclick="openWizard()">Anlage hinzufügen</button>
 </div>
 
-
-<!-- ✅ SPERRZEITEN -->
+<!-- ====================================
+     SPERRZEITEN + GRUND
+==================================== -->
 <div class="card" style="background:white; padding:20px; border-radius:10px; margin-bottom:20px;">
 <h2>Gesperrte Tage (von‑bis)</h2>
 
@@ -156,7 +262,7 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <label>Bis</label><input id="blockTo" type="date">
 
 <label>Grund (optional)</label>
-<input id="blockReason" type="text" placeholder="z.B. Urlaub, Wetter">
+<input id="blockReason" type="text" placeholder="z.B. Urlaub, Wetter, Material fehlt">
 
 <button onclick="addBlock()">Zeitraum sperren</button>
 
@@ -165,7 +271,9 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 </div>
 
 
-<!-- ✅ MONATSKALENDER -->
+<!-- ====================================
+     MONATSKALENDER
+==================================== -->
 <div class="calendar-container">
 <div class="calendar-header">
     <button onclick="prevMonth()">◀</button>
@@ -177,15 +285,17 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 </div>
 
 
-<!-- ✅ TAGESDETAILS -->
+<!-- ====================================
+     TAGESDETAILS
+==================================== -->
 <div class="day-details">
 <h2 id="selectedDayTitle">Details zum Tag</h2>
 <div id="dayTasks"></div>
 </div>
-
-
 <script>
-// ✅ Firebase init
+/* ============================================================
+   ✅ FIREBASE INITIALISIEREN
+   ============================================================ */
 firebase.initializeApp({
   apiKey: "AIzaSyCVW2N6uDTjYJec-tlw4ZGiJ_MjxWJLJjI",
   authDomain: "solarkalender-2bd58.firebaseapp.com",
@@ -199,70 +309,109 @@ const db = firebase.firestore();
 const tasksRef = db.collection("tasks");
 const blockedRef = db.collection("blocked");
 
-let tasks=[]; let blocked=[];
-let currentYear; let currentMonth;
-let selectedDay=null;
+/* ============================================================
+   ✅ GLOBALE VARIABLEN
+   ============================================================ */
+let tasks = [];
+let blocked = [];
+let currentYear;
+let currentMonth;
+let selectedDay = null;
 
+/* ============================================================
+   ✅ HELFERFUNKTIONEN DATEN/FORMATIERUNG
+   ============================================================ */
 function fmt(d){
-  let x=new Date(d);
-  return String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0")+"/"+String(x.getFullYear()).slice(2);
+    let x=new Date(d);
+    return String(x.getDate()).padStart(2,"0")+"/"+
+           String(x.getMonth()+1).padStart(2,"0")+"/"+
+           String(x.getFullYear()).slice(2);
 }
 function addDays(d,n){ let x=new Date(d); x.setDate(x.getDate()+n); return x.toISOString().split("T")[0]; }
+
 function getRange(start,end){
-  let out=[]; let s=new Date(start),  e=new Date(end);
-  while(s<=e){ out.push(s.toISOString().split("T")[0]); s.setDate(s.getDate()+1); }
-  return out;
-}
-function dayKey(y,m,d){ return new Date(y,m,d).toISOString().split("T")[0]; }
-
-// ------------------------------------------------------------
-// ✅ Live Sync
-// ------------------------------------------------------------
-tasksRef.onSnapshot(s=>{ tasks=s.docs.map(d=>({id:d.id,...d.data()})); renderCalendar(); renderDayDetails(selectedDay); });
-blockedRef.onSnapshot(s=>{ blocked=s.docs.map(d=>({id:d.id,...d.data()})); renderCalendar(); renderDayDetails(selectedDay); });
-
-// ------------------------------------------------------------
-function warn(t){
- document.getElementById("warnBox").innerHTML=`<div class='warn'>${t}</div>`;
- setTimeout(()=>document.getElementById("warnBox").innerHTML="",5000);
+    let arr=[]; 
+    let s=new Date(start), e=new Date(end);
+    while(s<=e){
+        arr.push(s.toISOString().split("T")[0]);
+        s.setDate(s.getDate()+1);
+    }
+    return arr;
 }
 
-// ------------------------------------------------------------
-// ✅ MODUL 2: Kunde + Grund im Kalender → Labels holen
-// ------------------------------------------------------------
+function dayKey(y,m,d){
+    return new Date(y,m,d).toISOString().split("T")[0];
+}
+
+/* ============================================================
+   ✅ FIRESTORE LIVE-SYNC
+   ============================================================ */
+tasksRef.onSnapshot(snap=>{
+    tasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCalendar();
+    renderDayDetails(selectedDay);
+});
+
+blockedRef.onSnapshot(snap=>{
+    blocked = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCalendar();
+    renderDayDetails(selectedDay);
+});
+
+/* ============================================================
+   ✅ WARNFUNKTION
+   ============================================================ */
+function warn(msg){
+    document.getElementById("warnBox").innerHTML = `<div class="warn">${msg}</div>`;
+    setTimeout(()=>document.getElementById("warnBox").innerHTML="",5000);
+}
+
+/* ============================================================
+   ✅ LABELS UNTER KALENDERTAGEN (Kunde + Grund)
+   ============================================================ */
 function getLabelsForDay(dateKey){
     let labels=[];
 
+    // Sperrgründe
     blocked.forEach(b=>{
         if(getRange(b.from,b.to).includes(dateKey)){
             if(b.grund && b.grund.trim()!==""){
-                labels.push({ text: b.grund.length>10?b.grund.substring(0,10)+"…":b.grund, type:"block" });
+                labels.push({
+                    text: b.grund.length>10 ? b.grund.substring(0,10)+"…" : b.grund,
+                    type: "block"
+                });
             } else {
-                labels.push({ text:"Gesperrt", type:"block" });
+                labels.push({
+                    text: "Gesperrt",
+                    type: "block"
+                });
             }
         }
     });
 
+    // Anlagen
     tasks.forEach(t=>{
         if(getRange(t.start,t.end).includes(dateKey)){
             labels.push({
-                text: t.kunde.length>10?t.kunde.substring(0,10)+"…":t.kunde,
+                text: t.kunde.length>10 ? t.kunde.substring(0,10)+"…" : t.kunde,
                 type: t.status
             });
         }
     });
 
-    return labels.slice(0,2);
+    return labels.slice(0,2);   // MAX 2 ZEILEN
 }
 
-// ------------------------------------------------------------
-// ✅ FARBBALKEN
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ FARBBALKEN IM KALENDER
+   ============================================================ */
 function getBarsForDay(dateKey){
     let bars=[];
+
     blocked.forEach(b=>{
         if(getRange(b.from,b.to).includes(dateKey)) bars.push("bar-block");
     });
+
     tasks.forEach(t=>{
         if(getRange(t.start,t.end).includes(dateKey)){
             if(t.status==="Offen") bars.push("bar-offen");
@@ -271,75 +420,84 @@ function getBarsForDay(dateKey){
             if(t.status==="Erledigt") bars.push("bar-done");
         }
     });
-    return bars.slice(0,3);
+
+    return bars.slice(0,3);  // max 3 Balken je Tag
 }
 
-// ------------------------------------------------------------
-// ✅ KW berechnen
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ ISO‑KALENDERWOCHE
+   ============================================================ */
 function getISOWeek(date){
     const t=new Date(date.getTime());
     t.setHours(0,0,0,0);
-    t.setDate(t.getDate()+3-((t.getDay()+6)%7));
+    t.setDate(t.getDate()+3-((t.getDay()+6) % 7));
     const w1=new Date(t.getFullYear(),0,4);
-    return 1+Math.round(((t-w1)/86400000 - 3 + ((w1.getDay()+6)%7))/7);
+    return 1 + Math.round(((t-w1)/86400000 - 3 + ((w1.getDay()+6)%7)) / 7);
 }
 
-// ------------------------------------------------------------
-// ✅ MODUL 1 + 2 → Kalender mit KW + Labels
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ HAUPTFUNKTION – MONATSKALENDER ZEICHNEN
+   ============================================================ */
 function renderCalendar(){
-    const names=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
-    document.getElementById("monthLabel").innerText = names[currentMonth]+" "+currentYear;
 
-    const grid=document.getElementById("calendarGrid");
-    grid.innerHTML="";
+    const names=["Januar","Februar","März","April","Mai","Juni",
+                 "Juli","August","September","Oktober","November","Dezember"];
 
-    // Header
+    document.getElementById("monthLabel").innerText =
+        names[currentMonth] + " " + currentYear;
+
+    const grid = document.getElementById("calendarGrid");
+    grid.innerHTML = "";
+
+    /* ---- HEADER: KW + Wochentage ---- */
     grid.innerHTML += `<div class="weekday-header">KW</div>`;
     ["Mo","Di","Mi","Do","Fr","Sa","So"].forEach(w=>{
-        grid.innerHTML+=`<div class="weekday-header">${w}</div>`;
+        grid.innerHTML += `<div class="weekday-header">${w}</div>`;
     });
 
     let first=new Date(currentYear,currentMonth,1);
     let last=new Date(currentYear,currentMonth+1,0);
     let days=last.getDate();
 
-    let offset=(first.getDay()===0?6:first.getDay()-1);
+    let offset = (first.getDay()===0 ? 6 : first.getDay()-1);
 
-    let cur=new Date(currentYear,currentMonth,1-offset);
+    let cur = new Date(currentYear,currentMonth,1-offset);
 
-    for(let week=0;week<6;week++){
+    for(let week=0; week<6; week++){
+
+        // ✅ KW links
         let kw=getISOWeek(cur);
-        grid.innerHTML+=`<div class="kw-cell">${kw}</div>`;
+        grid.innerHTML += `<div class="kw-cell">${kw}</div>`;
 
-        for(let d=0;d<7;d++){
+        for(let d=0; d<7; d++){
             let dateKey = cur.toISOString().split("T")[0];
-            let isMonth = cur.getMonth()===currentMonth;
+            let inMonth = cur.getMonth() === currentMonth;
 
             let html = `<div class="calendar-day-number">${cur.getDate()}</div>`;
 
+            // ✅ Balken
             getBarsForDay(dateKey).forEach(b=>{
-                html+=`<div class="day-bar ${b}"></div>`;
+                html += `<div class="day-bar ${b}"></div>`;
             });
 
+            // ✅ Labeltext (Kunde + Grund)
             let labels = getLabelsForDay(dateKey);
             labels.forEach(l=>{
                 let color="#444";
-                if(l.type==="block") color="#d9534f";
-                if(l.type==="Offen") color="#fabb00";
-                if(l.type==="DC begonnen") color="#ff8a00";
+                if(l.type==="block")          color="#d9534f";
+                if(l.type==="Offen")          color="#fabb00";
+                if(l.type==="DC begonnen")    color="#ff8a00";
                 if(l.type==="DC abgeschlossen") color="#0067c4";
-                if(l.type==="Erledigt") color="#3da35c";
+                if(l.type==="Erledigt")       color="#3da35c";
 
-                html+=`<div style="font-size:11px; color:${color}; overflow:hidden;">${l.text}</div>`;
+                html += `<div style="font-size:11px; color:${color}; overflow:hidden;">${l.text}</div>`;
             });
 
-            grid.innerHTML+=`
+            grid.innerHTML += `
                 <div class="calendar-day"
                      onclick="selectedDay='${dateKey}'; renderDayDetails('${dateKey}'); scrollToDayDetails();"
-                     style="background:${isMonth?'#ffffff':'#f0f0f0'};">
-                    ${html}
+                     style="background:${inMonth?'#ffffff':'#f0f0f0'};">
+                     ${html}
                 </div>
             `;
 
@@ -348,34 +506,41 @@ function renderCalendar(){
     }
 }
 
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ ZU TAGESDETAILS SCROLLEN (Handy)
+   ============================================================ */
 function scrollToDayDetails(){
     document.querySelector(".day-details").scrollIntoView({behavior:"smooth"});
 }
 
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ TAGESDETAILS RENDERN
+   ============================================================ */
 function renderDayDetails(dateKey){
     if(!dateKey) return;
 
-    document.getElementById("selectedDayTitle").innerText="Details für "+fmt(dateKey);
+    document.getElementById("selectedDayTitle").innerText =
+        "Details für " + fmt(dateKey);
 
-    let out="";
+    let html="";
 
+    // ✅ Sperrzeiten
     blocked.forEach(b=>{
         if(getRange(b.from,b.to).includes(dateKey)){
-            out+=`
-              <div class="task" style="border-left-color:#d9534f;">
+            html += `
+            <div class="task" style="border-left-color:#d9534f;">
                 <strong>Gesperrt</strong><br>
                 ${fmt(b.from)} – ${fmt(b.to)}<br>
-                ${b.grund?("<em>"+b.grund+"</em>"):""}<br>
+                ${b.grund ? `<em>${b.grund}</em><br>` : ""}
                 <button class="btn-small btn-delete" onclick="deleteBlocked('${b.id}')">Löschen</button>
-              </div>`;
+            </div>`;
         }
     });
 
+    // ✅ Anlagen
     tasks.forEach(t=>{
         if(getRange(t.start,t.end).includes(dateKey)){
-            out+=`
+            html += `
             <div class="swipe-container" data-id="${t.id}">
                 <div class="swipe-delete">LÖSCHEN</div>
                 <div class="swipe-content task">
@@ -388,84 +553,208 @@ function renderDayDetails(dateKey){
         }
     });
 
-    if(out==="") out="<p>Keine Einträge.</p>";
+    if(html==="") html = "<p>Keine Einträge.</p>";
 
-    document.getElementById("dayTasks").innerHTML=out;
+    document.getElementById("dayTasks").innerHTML = html;
+
     initSwipeToDelete();
 }
 
-// ------------------------------------------------------------
-function prepareAddTask(){
-    let kunde=document.getElementById("kunde").value;
-    let start=document.getElementById("start").value;
-    let end=document.getElementById("end").value;
+/* ============================================================
+   ✅ BASIS: APP STARTEN
+   ============================================================ */
+(function start(){
+    let now = new Date();
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    selectedDay = now.toISOString().split("T")[0];
 
-    if(!kunde||!start||!end){
-        warn("Bitte alle Felder ausfüllen!");
+    renderCalendar();
+    renderDayDetails(selectedDay);
+})();
+</script>
+<!-- ✅ WIZARD C – Bottom Sheet für neue Anlagen -->
+<div id="wizardBg">
+    <div id="wizardSheet">
+
+        <!-- Griffleiste oben -->
+        <div style="width:60px; height:6px; background:#ccc; border-radius:3px; margin:0 auto 15px auto;"></div>
+
+        <h2 id="wizardTitle" style="margin-top:0;"></h2>
+
+        <div id="wizardContent"></div>
+
+        <button id="wizardNextBtn"
+                style="padding:12px; margin-top:20px; background:#0067c4; color:white; border:none; border-radius:8px;">
+            Weiter
+        </button>
+
+        <button id="wizardCancelBtn"
+                style="padding:10px; margin-top:10px; background:#aaa; color:white; border:none; border-radius:8px;">
+            Abbrechen
+        </button>
+
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   ✅ WIZARD C – Schritt-für-Schritt Anlage
+   ============================================================ */
+
+let wizardStep = 1;
+let wizardData = {};
+
+function openWizard() {
+    wizardStep = 1;
+    wizardData = {};
+
+    document.getElementById("wizardBg").style.display = "flex";
+
+    setTimeout(() => {
+        document.getElementById("wizardSheet").style.transform = "translateY(0%)";
+    }, 10);
+
+    renderWizardStep();
+}
+
+function closeWizard() {
+    document.getElementById("wizardSheet").style.transform = "translateY(100%)";
+    setTimeout(() => {
+        document.getElementById("wizardBg").style.display = "none";
+    }, 250);
+}
+
+document.getElementById("wizardCancelBtn").onclick = closeWizard;
+
+document.getElementById("wizardNextBtn").onclick = () => {
+    if (!processWizardStep()) return;
+
+    wizardStep++;
+    if (wizardStep > 4) {
+        saveWizardTask();
         return;
     }
-    if(new Date(end)<new Date(start)){
-        warn("Enddatum ungültig!");
-        return;
+    renderWizardStep();
+};
+
+function renderWizardStep() {
+    const title = document.getElementById("wizardTitle");
+    const content = document.getElementById("wizardContent");
+    const nextBtn = document.getElementById("wizardNextBtn");
+
+    if (wizardStep === 1) {
+        title.innerText = "Startdatum wählen";
+        content.innerHTML = `
+            <input id="wizStart" type="date"
+                   style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+        `;
+        nextBtn.innerText = "Weiter";
     }
 
-    let r=getRange(start,end);
+    if (wizardStep === 2) {
+        title.innerText = "Enddatum wählen";
+        content.innerHTML = `
+            <input id="wizEnd" type="date"
+                   style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+        `;
+        nextBtn.innerText = "Weiter";
+    }
 
-    if(r.some(d=>blocked.some(b=>d>=b.from && d<=b.to))){
+    if (wizardStep === 3) {
+        title.innerText = "Kundennamen eingeben";
+        content.innerHTML = `
+            <input id="wizKunde" type="text" placeholder="Kunde"
+                   style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">
+        `;
+        nextBtn.innerText = "Weiter";
+    }
+
+    if (wizardStep === 4) {
+        title.innerText = "Zusammenfassung";
+        content.innerHTML = `
+            <p><strong>Start:</strong> ${fmt(wizardData.start)}</p>
+            <p><strong>Ende:</strong> ${fmt(wizardData.end)}</p>
+            <p><strong>Kunde:</strong> ${wizardData.kunde}</p>
+        `;
+        nextBtn.innerText = "Fertig";
+    }
+}
+
+function processWizardStep() {
+    if (wizardStep === 1) {
+        let s = document.getElementById("wizStart").value;
+        if (!s) { warn("Bitte Startdatum eingeben!"); return false; }
+        wizardData.start = s;
+    }
+
+    if (wizardStep === 2) {
+        let e = document.getElementById("wizEnd").value;
+        if (!e) { warn("Bitte Enddatum eingeben!"); return false; }
+        if (new Date(e) < new Date(wizardData.start)) {
+            warn("Enddatum muss nach Startdatum liegen!");
+            return false;
+        }
+        wizardData.end = e;
+    }
+
+    if (wizardStep === 3) {
+        let k = document.getElementById("wizKunde").value.trim();
+        if (!k) { warn("Bitte Kundennamen eingeben!"); return false; }
+        wizardData.kunde = k;
+    }
+
+    return true;
+}
+
+function saveWizardTask() {
+    let range = getRange(wizardData.start, wizardData.end);
+
+    // Sperren prüfen
+    if (range.some(d => blocked.some(b => d >= b.from && d <= b.to))) {
         warn("Zeitraum liegt in Sperrzeit!");
         return;
     }
 
-    if(tasks.some(t=>getRange(t.start,t.end).some(x=>r.includes(x)))){
-        warn("Zeitraum ist belegt!");
+    // Überschneidung prüfen
+    if (tasks.some(t => getRange(t.start,t.end).some(d => range.includes(d)))) {
+        warn("Überschneidung mit anderer Anlage!");
         return;
     }
 
-    tasksRef.add({kunde,start,end,status:"Offen"});
+    // ✅ Speichern
+    tasksRef.add({
+        kunde: wizardData.kunde,
+        start: wizardData.start,
+        end: wizardData.end,
+        status: "Offen"
+    });
 
-    document.getElementById("kunde").value="";
-    document.getElementById("start").value="";
-    document.getElementById("end").value="";
+    closeWizard();
+    warn("Anlage erfolgreich angelegt!");
 }
 
-// ------------------------------------------------------------
-function addBlock(){
-    let f=document.getElementById("blockFrom").value;
-    let t=document.getElementById("blockTo").value;
-    let g=document.getElementById("blockReason").value;
-
-    if(!f||!t){
-        warn("Bitte beide Daten eingeben!");
-        return;
-    }
-    if(new Date(t)<new Date(f)){
-        warn("Ungültiger Zeitraum!");
-        return;
-    }
-
-    blockedRef.add({from:f,to:t,grund:g||""});
-
-    document.getElementById("blockFrom").value="";
-    document.getElementById("blockTo").value="";
-    document.getElementById("blockReason").value="";
-}
-
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ SPERRZEIT LÖSCHEN
+   ============================================================ */
 function deleteBlocked(id){
     if(confirm("Sperrzeit wirklich löschen?")){
         blockedRef.doc(id).delete();
     }
 }
 
-// ------------------------------------------------------------
-let editingTaskId=null;
+/* ============================================================
+   ✅ ANLAGE BEARBEITEN (Popup)
+   ============================================================ */
+let editingTaskId = null;
+
 function openEditPopup(id){
-    let t=tasks.find(x=>x.id===id);
+    let t = tasks.find(x => x.id === id);
     if(!t) return;
 
-    editingTaskId=id;
+    editingTaskId = id;
 
-    document.body.insertAdjacentHTML("beforeend",`
+    document.body.insertAdjacentHTML("beforeend", `
     <div class="dialog-bg" id="editPopup">
         <div class="dialog-box">
             <h3>Anlage bearbeiten</h3>
@@ -494,248 +783,82 @@ function openEditPopup(id){
 }
 
 function closeEditPopup(){
-    let p=document.getElementById("editPopup");
+    let p = document.getElementById("editPopup");
     if(p) p.remove();
-    editingTaskId=null;
+    editingTaskId = null;
 }
 
-// ------------------------------------------------------------
 function saveEditedTask(){
-    let kunde=document.getElementById("edit_kunde").value;
-    let start=document.getElementById("edit_start").value;
-    let end=document.getElementById("edit_end").value;
-    let status=document.getElementById("edit_status").value;
+    let kunde = document.getElementById("edit_kunde").value;
+    let start = document.getElementById("edit_start").value;
+    let end = document.getElementById("edit_end").value;
+    let status = document.getElementById("edit_status").value;
 
-    if(!kunde||!start||!end){
-        warn("Bitte alle Felder ausfüllen!");
+    if (!kunde || !start || !end) {
+        warn("Alle Felder müssen ausgefüllt werden!");
         return;
     }
-    if(new Date(end)<new Date(start)){
+    if (new Date(end) < new Date(start)) {
         warn("Enddatum ungültig!");
         return;
     }
 
-    let r=getRange(start,end);
+    let range = getRange(start,end);
 
-    if(r.some(d=>blocked.some(b=>d>=b.from && d<=b.to))){
-        warn("Zeitraum liegt in Sperrung!");
+    if(range.some(d => blocked.some(b => d>=b.from && d<=b.to))){
+        warn("Zeitraum liegt in Sperre!");
         return;
     }
 
-    if(tasks.some(t=>t.id!==editingTaskId &&
-        getRange(t.start,t.end).some(x=>r.includes(x)))){
+    if(tasks.some(t => t.id!==editingTaskId &&
+        getRange(t.start,t.end).some(d => range.includes(d)))){
         warn("Überschneidung mit anderer Anlage!");
         return;
     }
 
-    tasksRef.doc(editingTaskId).update({kunde,start,end,status});
+    tasksRef.doc(editingTaskId).update({
+        kunde, start, end, status
+    });
+
     closeEditPopup();
 }
 
-// ------------------------------------------------------------
+/* ============================================================
+   ✅ SWIPE-TO-DELETE (iOS Style)
+   ============================================================ */
 function initSwipeToDelete(){
     document.querySelectorAll(".swipe-container").forEach(box=>{
-        let content=box.querySelector(".swipe-content");
-        let del=box.querySelector(".swipe-delete");
-        let id=box.dataset.id;
+        let content = box.querySelector(".swipe-content");
+        let del = box.querySelector(".swipe-delete");
+        let id = box.dataset.id;
 
         let startX=0, moved=0;
 
         content.onmousedown = content.ontouchstart = e=>{
-            startX=(e.touches?e.touches[0].clientX:e.clientX);
-        };
-        content.onmousemove = content.ontouchmove = e=>{
-            let x=(e.touches?e.touches[0].clientX:e.clientX);
-            moved=x-startX;
-            if(moved<0) content.style.transform=`translateX(${moved}px)`;
-        };
-        content.onmouseup = content.ontouchend = ()=>{
-            if(moved<-60) content.style.transform="translateX(-120px)";
-            else content.style.transform="translateX(0)";
+            startX = (e.touches ? e.touches[0].clientX : e.clientX);
         };
 
-        del.onclick=()=>{
+        content.onmousemove = content.ontouchmove = e=>{
+            let x = (e.touches ? e.touches[0].clientX : e.clientX);
+            moved = x - startX;
+            if(moved < 0){
+                content.style.transform = `translateX(${moved}px)`;
+            }
+        };
+
+        content.onmouseup = content.ontouchend = ()=>{
+            if(moved < -60){
+                content.style.transform = "translateX(-120px)";
+            } else {
+                content.style.transform = "translateX(0)";
+            }
+        };
+
+        del.onclick = ()=>{
             if(confirm("Anlage wirklich löschen?")){
                 tasksRef.doc(id).delete();
             }
         };
     });
-}
-
-// ------------------------------------------------------------
-(function start(){
-    let now=new Date();
-    currentYear=now.getFullYear();
-    currentMonth=now.getMonth();
-    selectedDay=now.toISOString().split("T")[0];
-    renderCalendar();
-    renderDayDetails(selectedDay);
-})();
-</script>
-
-</body>
-</html>
-<!-- ✅ WIZARD C – Bottom Sheet (Anlagen‑Erstellung) -->
-<div id="wizardBg" 
-     style="display:none; position:fixed; left:0; top:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.45); backdrop-filter:blur(3px);
-            z-index:9999; justify-content:flex-end;">
-
-    <div id="wizardSheet"
-         style="background:white; width:100%; max-height:80%; border-radius:16px 16px 0 0;
-                padding:20px; display:flex; flex-direction:column;
-                transform:translateY(100%); transition:0.3s ease;">
-        
-        <!-- Griffleiste -->
-        <div style="width:60px; height:6px; background:#ccc; border-radius:3px; margin:0 auto 15px auto;"></div>
-
-        <h2 id="wizardTitle" style="margin-top:0;"></h2>
-
-        <div id="wizardContent"></div>
-
-        <button id="wizardNextBtn" 
-                style="padding:12px; margin-top:20px; background:#0067c4; color:white; border:none; border-radius:8px;">
-            Weiter
-        </button>
-
-        <button id="wizardCancelBtn" 
-                style="padding:10px; margin-top:10px; background:#aaa; color:white; border:none; border-radius:8px;">
-            Abbrechen
-        </button>
-    </div>
-</div>
-
-
-<script>
-/* ------------------------------------------------------------
-   ✅ WIZARD C – Schritt‑für‑Schritt‑Anlage‑Erstellung
------------------------------------------------------------- */
-
-let wizardStep = 1;
-let wizardData = {};
-
-function openWizard() {
-    wizardStep = 1;
-    wizardData = {};
-
-    document.getElementById("wizardBg").style.display = "flex";
-    setTimeout(() => {
-        document.getElementById("wizardSheet").style.transform = "translateY(0%)";
-    }, 10);
-
-    renderWizardStep();
-}
-
-function closeWizard() {
-    document.getElementById("wizardSheet").style.transform = "translateY(100%)";
-    setTimeout(() => {
-        document.getElementById("wizardBg").style.display = "none";
-    }, 250);
-}
-
-document.getElementById("wizardCancelBtn").onclick = closeWizard;
-
-// ✅ Weiter-Button (Schritt wechseln)
-document.getElementById("wizardNextBtn").onclick = () => {
-    if (!processWizardStep()) return;
-    wizardStep++;
-    if (wizardStep > 4) {
-        saveWizardTask();
-        return;
-    }
-    renderWizardStep();
-};
-
-// ✅ Wizard‑Schritte zeichnen
-function renderWizardStep() {
-    const title = document.getElementById("wizardTitle");
-    const content = document.getElementById("wizardContent");
-    const nextBtn = document.getElementById("wizardNextBtn");
-
-    if (wizardStep === 1) {
-        title.innerText = "Startdatum wählen";
-        content.innerHTML = `<input id="wizStart" type="date" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">`;
-        nextBtn.innerText = "Weiter";
-    }
-
-    if (wizardStep === 2) {
-        title.innerText = "Enddatum wählen";
-        content.innerHTML = `<input id="wizEnd" type="date" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">`;
-        nextBtn.innerText = "Weiter";
-    }
-
-    if (wizardStep === 3) {
-        title.innerText = "Kunde eingeben";
-        content.innerHTML = `<input id="wizKunde" type="text" placeholder="Kundenname"
-                             style="width:100%; padding:12px; border-radius:8px; border:1px solid #ccc;">`;
-        nextBtn.innerText = "Weiter";
-    }
-
-    if (wizardStep === 4) {
-        title.innerText = "Zusammenfassung";
-        content.innerHTML = `
-            <p><strong>Start:</strong> ${fmt(wizardData.start)}</p>
-            <p><strong>Ende:</strong> ${fmt(wizardData.end)}</p>
-            <p><strong>Kunde:</strong> ${wizardData.kunde}</p>
-        `;
-        nextBtn.innerText = "Fertig";
-    }
-}
-
-// ✅ Eingaben prüfen
-function processWizardStep() {
-
-    if (wizardStep === 1) {
-        let s = document.getElementById("wizStart").value;
-        if (!s) { warn("Bitte Startdatum auswählen!"); return false; }
-        wizardData.start = s;
-    }
-
-    if (wizardStep === 2) {
-        let e = document.getElementById("wizEnd").value;
-        if (!e) { warn("Bitte Enddatum auswählen!"); return false; }
-        if (new Date(e) < new Date(wizardData.start)) {
-            warn("Enddatum muss nach Startdatum liegen!");
-            return false;
-        }
-        wizardData.end = e;
-    }
-
-    if (wizardStep === 3) {
-        let k = document.getElementById("wizKunde").value.trim();
-        if (!k) { warn("Bitte Kundenname eingeben!"); return false; }
-        wizardData.kunde = k;
-    }
-
-    return true;
-}
-
-// ✅ Anlage speichern inkl. Konfliktprüfung
-function saveWizardTask() {
-
-    let range = getRange(wizardData.start, wizardData.end);
-
-    // Sperrzeit prüfen
-    if(range.some(d => blocked.some(b => d >= b.from && d <= b.to))){
-        warn("Der Zeitraum liegt in einer Sperrzeit!");
-        return;
-    }
-
-    // Überschneidung prüfen
-    if(tasks.some(t => getRange(t.start,t.end).some(d => range.includes(d)))){
-        warn("Zeitraum überschneidet sich mit vorhandenen Anlagen!");
-        return;
-    }
-
-    // ✅ Speichern
-    tasksRef.add({
-        kunde: wizardData.kunde,
-        start: wizardData.start,
-        end: wizardData.end,
-        status: "Offen"
-    });
-
-    closeWizard();
-    warn("Anlage erfolgreich angelegt!");
 }
 </script>
