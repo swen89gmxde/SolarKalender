@@ -2,71 +2,149 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>SolarKalender – PV‑Montageplaner (LIVE SYNC)</title>
+<title>SolarKalender – PV‑Planer (Live‑Sync + Monatsansicht)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- ✅ Firebase COMPAT SDK -->
+<!-- ✅ Firebase COMPAT SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
 <style>
-body { font-family: Arial, sans-serif; background:#f5f6fa; padding:20px; }
-.container { max-width:900px; margin:auto; }
-.card { background:white; padding:20px; border-radius:10px; margin-bottom:20px; box-shadow:0 3px 8px rgba(0,0,0,0.12); }
-input, button, select {
-    width:100%; padding:12px; margin-top:10px;
-    border-radius:6px; border:1px solid #ccc; font-size:16px;
+body {
+    font-family: Arial, sans-serif;
+    background:#f5f6fa;
+    margin:0; padding:0;
 }
-button { background:#0067c4; color:white; border:none; cursor:pointer; }
-button:hover { background:#004f99; }
+.container { max-width:1000px; margin:auto; padding:20px; }
+
+h1 { margin-top:0; }
+
+/* --- Monatskalender --- */
+.calendar-container {
+    background:white;
+    border-radius:10px;
+    padding:20px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
+    margin-bottom:20px;
+}
+.calendar-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+}
+.calendar-header button {
+    width:auto;
+    padding:6px 12px;
+    background:#0067c4;
+    color:white;
+    border-radius:6px;
+    border:none;
+}
+.calendar-grid {
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+}
+.calendar-day {
+    background:#ffffff;
+    border-radius:6px;
+    min-height:70px;
+    padding:5px;
+    position:relative;
+    cursor:pointer;
+    border:1px solid #ddd;
+}
+.calendar-day:hover { background:#f0f8ff; }
+.calendar-day-number { font-size:14px; font-weight:bold; }
+
+.day-bar {
+    height:6px;
+    border-radius:3px;
+    margin-top:4px;
+}
+.bar-offen { background:#fabb00; }
+.bar-dcstart { background:#ff8a00; }
+.bar-dcend { background:#0067c4; }
+.bar-done { background:#3da35c; }
+.bar-block { background:#d9534f; }
+
+/* --- Tagesliste --- */
+.day-details {
+    background:white;
+    padding:20px; border-radius:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.12);
+    margin-bottom:20px;
+}
 
 .task {
-    padding:15px; background:white; border-left:6px solid #0067c4;
-    margin-bottom:12px; border-radius:6px;
+    padding:15px;
+    background:white;
+    border-left:6px solid #0067c4;
+    margin-bottom:12px;
+    border-radius:6px;
+    position:relative;
 }
 
-.btn-small {
-    padding:6px 12px; width:auto; background:#ccc;
-    margin-right:5px; cursor:pointer; border-radius:6px; border:none;
+/* ✅ SWIPE DELETE (Variante 1 – iOS Style) */
+.swipe-container {
+    position:relative;
+    overflow:hidden;
 }
-.btn-delete { background:#d9534f !important; color:white; }
+.swipe-content {
+    position:relative;
+    z-index:2;
+    background:white;
+    transition: transform 0.25s;
+}
+.swipe-delete {
+    position:absolute;
+    right:0; top:0; bottom:0;
+    width:120px;
+    background:#d9534f;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:bold;
+    z-index:1;
+}
 
-.blocked-row {
-    display:flex; justify-content:space-between; align-items:center;
-    background:#ffe6e6; padding:10px 12px; border-radius:6px; margin-bottom:6px;
-}
-.blocked-delete {
-    background:#d9534f; color:white; border:none;
-    border-radius:4px; padding:4px 10px; cursor:pointer;
-}
-
-.warn {
-    padding:10px; background:#fff3cd; border-left:5px solid #ffcc00;
-    margin-bottom:10px; border-radius:5px; font-weight:bold;
-}
-
+/* Bearbeiten-Popup */
 .dialog-bg {
     position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center;
-    z-index:9999; display:none;
+    background:rgba(0,0,0,0.6);
+    display:none; justify-content:center; align-items:center;
+    z-index:5000;
 }
 .dialog-box {
-    background:white; padding:20px; border-radius:12px; width:300px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    background:white; padding:20px; width:300px;
+    border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.4);
 }
+.dialog-box h3 { margin-top:0; }
 .dialog-btn {
     width:100%; padding:10px; margin-top:10px;
-    border-radius:6px; cursor:pointer; border:none; font-size:16px;
+    border:none; border-radius:6px; font-size:16px; cursor:pointer;
 }
-.dialog-red { background:#d9534f; color:white; }
 .dialog-blue { background:#0067c4; color:white; }
+.dialog-red { background:#d9534f; color:white; }
+
+/* Warnungen */
+.warn {
+    background:#fff3cd;
+    border-left:5px solid #ffcc00;
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:5px;
+    font-weight:bold;
+}
 </style>
 </head>
-<body>
 
+<body>
 <div class="container">
 
-<h1>SolarKalender – PV‑Montageplaner (Live‑Sync)</h1>
+<h1>SolarKalender – PV‑Montageplaner</h1>
 <div id="warnBox"></div>
 
 <button onclick="location.reload()" 
@@ -74,7 +152,7 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 🔄 Seite aktualisieren
 </button>
 
-<!-- Neue Anlage -->
+<!-- ✅ ANLAGE ANLEGEN -->
 <div class="card">
 <h2>Neue Anlage einplanen</h2>
 
@@ -90,7 +168,7 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <button onclick="prepareAddTask()">Anlage hinzufügen</button>
 </div>
 
-<!-- Sperrzeiten -->
+<!-- ✅ SPERRZEITEN -->
 <div class="card">
 <h2>Gesperrte Tage (von‑bis)</h2>
 
@@ -103,30 +181,25 @@ style="background:#888; color:white; border-radius:8px; margin-bottom:20px;">
 <div id="blockedList"></div>
 </div>
 
-<!-- Anlagen -->
-<div class="card">
-<h2>Geplante Anlagen</h2>
-<div id="taskList"></div>
+<!-- ✅ MONATSKALENDER -->
+<div class="calendar-container">
+<div class="calendar-header">
+    <button onclick="prevMonth()">◀</button>
+    <h2 id="monthLabel"></h2>
+    <button onclick="nextMonth()">▶</button>
 </div>
 
+<div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
-
-<!-- ✅ Konflikt-Popup -->
-<div class="dialog-bg" id="conflictDialog">
-<div class="dialog-box">
-    <h3>Konflikt entdeckt</h3>
-    <p>Der Zeitraum überschneidet sich mit bestehenden Einträgen.</p>
-
-    <button class="dialog-btn dialog-red" onclick="cancelAddTask()">Abbrechen</button>
-    <button class="dialog-btn" style="background:#ffaa00; color:white;" onclick="forceAddTask()">Trotzdem einplanen</button>
-    <button class="dialog-btn dialog-blue" onclick="autoShiftAddTask()">Automatisch verschieben</button>
+<!-- ✅ TAGESDETAILS -->
+<div class="day-details">
+<h2 id="selectedDayTitle">Details zum Tag</h2>
+<div id="dayTasks"></div>
 </div>
-</div>
-
 <script>
 // ------------------------------------------------------------
-// Firebase initialisieren
+// ✅ Firebase initialisieren
 // ------------------------------------------------------------
 firebase.initializeApp({
   apiKey: "AIzaSyCVW2N6uDTjYJec-tlw4ZGiJ_MjxWJLJjI",
@@ -136,193 +209,349 @@ firebase.initializeApp({
   messagingSenderId: "616937848687",
   appId: "1:616937848687:web:8772cdb5f6b521e36a329a"
 });
-const db = firebase.firestore();
 
+const db = firebase.firestore();
 const tasksRef = db.collection("tasks");
 const blockedRef = db.collection("blocked");
 
+// ------------------------------------------------------------
 let tasks = [];
 let blocked = [];
+let currentYear;
+let currentMonth;
+let selectedDay = null;
 
-let pendingTask = null;
-
-
-// ------------------------------------------------------------
-// Echtzeitlistener
-// ------------------------------------------------------------
-tasksRef.onSnapshot(s => { tasks = s.docs.map(d=>({id:d.id,...d.data()})); autoRecalc(); render(); });
-blockedRef.onSnapshot(s=>{ blocked = s.docs.map(d=>({id:d.id,...d.data()})); autoRecalc(); render(); });
-
-
-// ------------------------------------------------------------
-// Hilfen
 // ------------------------------------------------------------
 function fmt(d){
-  let x=new Date(d);
-  return String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0")+"/"+String(x.getFullYear()).slice(2);
+    let x=new Date(d);
+    return String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0")+"/"+String(x.getFullYear()).slice(2);
 }
 function addDays(d,n){ let x=new Date(d); x.setDate(x.getDate()+n); return x.toISOString().split("T")[0]; }
 function getRange(start,end){
-  let arr=[], d=new Date(start), e=new Date(end);
-  while(d<=e){ arr.push(d.toISOString().split("T")[0]); d.setDate(d.getDate()+1); }
-  return arr;
+    let out=[]; let s=new Date(start); let e=new Date(end);
+    while(s<=e){ out.push(s.toISOString().split("T")[0]); s.setDate(s.getDate()+1); }
+    return out;
 }
-function inBlocked(d){ return blocked.some(b=>d>=b.from && d<=b.to); }
-function anyOverlap(start,end){
-  let r=getRange(start,end);
-  return tasks.some(t=> getRange(t.start,t.end).some(d=>r.includes(d)) );
+function dayKey(y,m,d){
+    return new Date(y,m,d).toISOString().split("T")[0];
 }
-
 
 // ------------------------------------------------------------
-// Konflikt-Dialog LOGIK
+// ✅ LIVE SYNC
+// ------------------------------------------------------------
+tasksRef.onSnapshot(snap=>{
+    tasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCalendar();
+    renderDayDetails(selectedDay);
+});
+blockedRef.onSnapshot(snap=>{
+    blocked = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCalendar();
+    renderDayDetails(selectedDay);
+});
+
+// ------------------------------------------------------------
+function initCalendar(){
+    let now=new Date();
+    currentYear=now.getFullYear();
+    currentMonth=now.getMonth();
+    selectedDay = now.toISOString().split("T")[0];
+    renderCalendar();
+    renderDayDetails(selectedDay);
+}
+function prevMonth(){
+    currentMonth--;
+    if(currentMonth<0){ currentMonth=11; currentYear--; }
+    renderCalendar();
+}
+function nextMonth(){
+    currentMonth++;
+    if(currentMonth>11){ currentMonth=0; currentYear++; }
+    renderCalendar();
+}
+
+// ------------------------------------------------------------
+function renderCalendar(){
+    const names=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+    document.getElementById("monthLabel").innerText = names[currentMonth]+" "+currentYear;
+
+    const grid=document.getElementById("calendarGrid");
+    grid.innerHTML="";
+
+    let first=new Date(currentYear,currentMonth,1);
+    let last=new Date(currentYear,currentMonth+1,0);
+    let days = last.getDate();
+
+    let offset = first.getDay();
+    if(offset===0) offset=7;
+
+    for(let i=1;i<offset;i++){
+        let e=document.createElement("div");
+        e.className="calendar-day";
+        e.style.background="#f0f0f0";
+        grid.appendChild(e);
+    }
+
+    for(let d=1; d<=days; d++){
+        let box=document.createElement("div");
+        box.className="calendar-day";
+        let k=dayKey(currentYear,currentMonth,d);
+        box.innerHTML=`<div class="calendar-day-number">${d}</div>`;
+
+        getBarsForDay(k).forEach(b=>{
+            let bar=document.createElement("div");
+            bar.className="day-bar "+b;
+            box.appendChild(bar);
+        });
+
+        box.onclick=()=>{
+            selectedDay=k;
+            renderDayDetails(k);
+            scrollToDayDetails();
+        };
+
+        grid.appendChild(box);
+    }
+}
+
+function getBarsForDay(dateKey){
+    let bars=[];
+    blocked.forEach(b=>{
+        if(getRange(b.from,b.to).includes(dateKey)) bars.push("bar-block");
+    });
+    tasks.forEach(t=>{
+        if(getRange(t.start,t.end).includes(dateKey)){
+            switch(t.status){
+                case "Offen": bars.push("bar-offen"); break;
+                case "DC begonnen": bars.push("bar-dcstart"); break;
+                case "DC abgeschlossen": bars.push("bar-dcend"); break;
+                case "Erledigt": bars.push("bar-done"); break;
+            }
+        }
+    });
+    return bars.slice(0,3);
+}
+
+function scrollToDayDetails(){
+    document.querySelector(".day-details").scrollIntoView({ behavior:"smooth" });
+}
+
+// ------------------------------------------------------------
+function renderDayDetails(dateKey){
+    if(!dateKey) return;
+    document.getElementById("selectedDayTitle").innerText = "Details für "+fmt(dateKey);
+
+    let out="";
+
+    blocked.forEach(b=>{
+        if(getRange(b.from,b.to).includes(dateKey)){
+            out += `<div class="task" style="border-left-color:#d9534f;">
+                    <strong>Gesperrt</strong><br>
+                    ${fmt(b.from)} bis ${fmt(b.to)}<br>
+                    <button class="btn-small btn-delete" onclick="deleteBlocked('${b.id}')">Löschen</button>
+                </div>`;
+        }
+    });
+
+    tasks.forEach(t=>{
+        if(getRange(t.start,t.end).includes(dateKey)){
+            out += `
+            <div class="swipe-container" data-id="${t.id}">
+                <div class="swipe-delete">LÖSCHEN</div>
+                <div class="swipe-content task">
+                    <strong>${t.kunde}</strong><br>
+                    ${fmt(t.start)} bis ${fmt(t.end)}<br>
+                    Status: ${t.status}<br><br>
+                    <button class="btn-small" onclick="openEditPopup('${t.id}')">Bearbeiten</button>
+                </div>
+            </div>`;
+        }
+    });
+
+    if(out==="") out="<p>Keine Einträge.</p>";
+    document.getElementById("dayTasks").innerHTML=out;
+    initSwipeToDelete();
+}
+
+// ------------------------------------------------------------
+function warn(t){
+    document.getElementById("warnBox").innerHTML = `<div class='warn'>${t}</div>`;
+    setTimeout(()=>document.getElementById("warnBox").innerHTML="",5000);
+}
+
 // ------------------------------------------------------------
 function prepareAddTask(){
     let kunde=document.getElementById("kunde").value;
     let start=document.getElementById("start").value;
     let end=document.getElementById("end").value;
 
-    if(!kunde || !start || !end || end<start){
-        warn("Bitte gültige Daten eingeben!");
+    if(!kunde || !start || !end){
+        warn("Bitte alle Felder ausfüllen!");
+        return;
+    }
+    if(new Date(end) < new Date(start)){
+        warn("Enddatum muss nach dem Startdatum liegen.");
         return;
     }
 
-    pendingTask = { kunde, start, end, status:"Offen" };
+    let range=getRange(start,end);
 
-    let r = getRange(start,end);
-
-    if(r.some(inBlocked) || anyOverlap(start,end)){
-        document.getElementById("conflictDialog").style.display="flex";
-    } else {
-        saveTask(pendingTask);
+    if(range.some(r => blocked.some(b => r>=b.from && r<=b.to))){
+        warn("Zeitraum liegt in Sperre!");
+        return;
     }
-}
 
-function cancelAddTask(){
-    pendingTask=null;
-    document.getElementById("conflictDialog").style.display="none";
-}
-
-function forceAddTask(){
-    saveTask(pendingTask); // ✅ Option 1: exakt speichern
-    closeDialog();
-}
-
-function autoShiftAddTask(){
-    let t=pendingTask;
-
-    while(anyOverlap(t.start,t.end) || getRange(t.start,t.end).some(inBlocked)){
-        t.start=addDays(t.start,1);
-        t.end=addDays(t.end,1);
+    if(tasks.some(t => getRange(t.start,t.end).some(d=>range.includes(d)))){
+        warn("Zeitraum ist bereits belegt!");
+        return;
     }
-    saveTask(t);
-    closeDialog();
+
+    tasksRef.add({ kunde,start,end,status:"Offen" });
+
+    document.getElementById("kunde").value="";
+    document.getElementById("start").value="";
+    document.getElementById("end").value="";
 }
 
-function closeDialog(){
-    pendingTask=null;
-    document.getElementById("conflictDialog").style.display="none";
-}
-
-function saveTask(t){
-    tasksRef.add(t);
-}
-
-
-// ------------------------------------------------------------
-// Sperrzeiten
 // ------------------------------------------------------------
 function addBlock(){
     let f=document.getElementById("blockFrom").value;
-    let to=document.getElementById("blockTo").value;
-    if(!f||!to||to<f){ warn("Ungültiger Zeitraum!"); return;}
-    blockedRef.add({from:f,to:to});
+    let t=document.getElementById("blockTo").value;
+
+    if(!f||!t){
+        warn("Bitte beide Daten eingeben!");
+        return;
+    }
+    if(new Date(t)<new Date(f)){
+        warn("Ungültiger Zeitraum!");
+        return;
+    }
+
+    blockedRef.add({from:f,to:t});
+    document.getElementById("blockFrom").value="";
+    document.getElementById("blockTo").value="";
 }
-function deleteBlocked(id){ blockedRef.doc(id).delete(); }
-
 
 // ------------------------------------------------------------
-// Automatische Verschiebung (für spätere Anlagen)
-// ------------------------------------------------------------
-function autoRecalc(){
-    tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
-
-    for(let i=0;i<tasks.length;i++){
-        let t=tasks[i];
-        let start=t.start;
-        let end=t.end;
-
-        while(
-          anyOverlap(start,end) || 
-          getRange(start,end).some(inBlocked)
-        ){
-            start=addDays(start,1);
-            end=addDays(end,1);
-        }
-
-        if(start!==t.start){
-            tasksRef.doc(t.id).update({start:start,end:end});
-        }
+function deleteBlocked(id){
+    if(confirm("Sperrzeit wirklich löschen?")){
+        blockedRef.doc(id).delete();
     }
 }
 
+// ------------------------------------------------------------
+let editingTaskId=null;
 
-// ------------------------------------------------------------
-// Rendering
-// ------------------------------------------------------------
-function warn(txt){
-    document.getElementById("warnBox").innerHTML=`<div class='warn'>${txt}</div>`;
-    setTimeout(()=>document.getElementById("warnBox").innerHTML="",5000);
+function openEditPopup(id){
+    let t=tasks.find(x=>x.id===id);
+    if(!t) return;
+
+    editingTaskId=id;
+
+    document.body.insertAdjacentHTML("beforeend",`
+    <div class="dialog-bg" id="editPopup" style="display:flex;">
+        <div class="dialog-box">
+            <h3>Anlage bearbeiten</h3>
+
+            <label>Kunde</label>
+            <input id="edit_kunde" value="${t.kunde}">
+
+            <label>Startdatum</label>
+            <input id="edit_start" type="date" value="${t.start}">
+
+            <label>Enddatum</label>
+            <input id="edit_end" type="date" value="${t.end}">
+
+            <label>Status</label>
+            <select id="edit_status">
+                <option ${t.status==="Offen"?"selected":""}>Offen</option>
+                <option ${t.status==="DC begonnen"?"selected":""}>DC begonnen</option>
+                <option ${t.status==="DC abgeschlossen"?"selected":""}>DC abgeschlossen</option>
+                <option ${t.status==="Erledigt"?"selected":""}>Erledigt</option>
+            </select>
+
+            <button class="dialog-btn dialog-blue" onclick="saveEditedTask()">Speichern</button>
+            <button class="dialog-btn dialog-red" onclick="closeEditPopup()">Abbrechen</button>
+        </div>
+    </div>
+    `);
 }
 
-function render(){
-
-    // Sperrzeiten
-    let bl=document.getElementById("blockedList");
-    bl.innerHTML="";
-    blocked.forEach(b=>{
-        let row=document.createElement("div");
-        row.className="blocked-row";
-        row.innerHTML = `
-            <span>${fmt(b.from)} bis ${fmt(b.to)}</span>
-            <button class="blocked-delete" onclick="deleteBlocked('${b.id}')">X</button>
-        `;
-        bl.appendChild(row);
-    });
-
-    // Anlagen
-    let tl=document.getElementById("taskList");
-    tl.innerHTML="";
-    tasks.sort((a,b)=>new Date(a.start)-new Date(b.start));
-    tasks.forEach(t=>{
-        let d=document.createElement("div");
-        d.className="task";
-        d.innerHTML=`
-        <strong>${t.kunde}</strong><br>
-        Von: ${fmt(t.start)}<br>
-        Bis: ${fmt(t.end)}<br><br>
-        `;
-
-        let sel=document.createElement("select");
-        ["Offen","DC begonnen","DC abgeschlossen","Erledigt"].forEach(s=>{
-           sel.innerHTML+=`<option ${t.status===s?"selected":""}>${s}</option>`;
-        });
-        sel.onchange=()=> tasksRef.doc(t.id).update({status:sel.value});
-
-        let del=document.createElement("button");
-        del.className="btn-small btn-delete";
-        del.innerText="Löschen";
-        del.onclick=()=>tasksRef.doc(t.id).delete();
-
-        d.appendChild(sel);
-        d.appendChild(del);
-
-        tl.appendChild(d);
-    });
-
+function closeEditPopup(){
+    let p=document.getElementById("editPopup");
+    if(p) p.remove();
+    editingTaskId=null;
 }
+
+// ------------------------------------------------------------
+function saveEditedTask(){
+    let kunde=document.getElementById("edit_kunde").value;
+    let start=document.getElementById("edit_start").value;
+    let end=document.getElementById("edit_end").value;
+    let status=document.getElementById("edit_status").value;
+
+    if(!kunde || !start || !end){
+        warn("Bitte alle Felder ausfüllen!");
+        return;
+    }
+    if(new Date(end) < new Date(start)){
+        warn("Enddatum ungültig!");
+        return;
+    }
+
+    let range=getRange(start,end);
+
+    if(range.some(r => blocked.some(b => r>=b.from && r<=b.to))){
+        warn("Zeitraum liegt in Sperre!");
+        return;
+    }
+
+    if(tasks.some(t => t.id!==editingTaskId &&
+        getRange(t.start,t.end).some(d=>range.includes(d)))){
+        warn("Zeitraum überschneidet sich!");
+        return;
+    }
+
+    tasksRef.doc(editingTaskId).update({kunde,start,end,status});
+    closeEditPopup();
+}
+
+// ------------------------------------------------------------
+function initSwipeToDelete(){
+    document.querySelectorAll(".swipe-container").forEach(box => {
+        let content=box.querySelector(".swipe-content");
+        let del=box.querySelector(".swipe-delete");
+        let id=box.dataset.id;
+
+        let startX=0;
+        let moved=0;
+
+        content.onmousedown = content.ontouchstart = e=>{
+            startX=(e.touches?e.touches[0].clientX:e.clientX);
+        };
+
+        content.onmousemove = content.ontouchmove = e=>{
+            let x=(e.touches?e.touches[0].clientX:e.clientX);
+            moved=x-startX;
+            if(moved<0) content.style.transform=`translateX(${moved}px)`;
+        };
+
+        content.onmouseup = content.ontouchend = ()=>{
+            if(moved<-60) content.style.transform="translateX(-120px)";
+            else content.style.transform="translateX(0px)";
+        };
+
+        del.onclick=()=>{
+            if(confirm("Anlage wirklich löschen?")){
+                tasksRef.doc(id).delete();
+            }
+        };
+    });
+}
+
+// ------------------------------------------------------------
+initCalendar();
 
 </script>
-
 </body>
 </html>
